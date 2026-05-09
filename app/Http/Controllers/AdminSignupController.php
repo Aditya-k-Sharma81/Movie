@@ -70,6 +70,7 @@ class AdminSignupController extends Controller
             'theatre_pic' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'capacity' => 'nullable|integer|min:1',
             'address' => 'nullable|string|max:500',
+            'theatre_type' => 'nullable|string|in:Single Screen,Multiplex',
         ]);
 
         if ($validator->fails()) {
@@ -78,27 +79,27 @@ class AdminSignupController extends Controller
 
         try {
             Log::info('Attempting to update profile for admin ID: ' . $adminId);
-            
+
             $admin = AdminSignupModel::where('_id', $adminId)->first();
-            
+
             if (!$admin) {
                 Log::error('Admin not found for ID: ' . $adminId);
                 return response()->json(['status' => false, 'message' => 'Admin not found'], 404);
             }
 
-            $data = $request->only('name', 'phone', 'theatre_name', 'capacity', 'address');
+            $data = $request->only('name', 'phone', 'theatre_name', 'capacity', 'address', 'theatre_type');
 
             if ($request->hasFile('theatre_pic')) {
                 Log::info('Theatre pic detected in request. Using manual Cloudinary Engine...');
-                
+
                 $file = $request->file('theatre_pic');
-                
+
                 try {
                     // Manually initialize Cloudinary Engine to bypass Facade issues in Laravel 12
                     $cloudinary = new \Cloudinary\Cloudinary([
                         'cloud' => [
                             'cloud_name' => config('cloudinary.cloud_name'),
-                            'api_key'    => config('cloudinary.api_key'),
+                            'api_key' => config('cloudinary.api_key'),
                             'api_secret' => config('cloudinary.api_secret'),
                         ],
                         'url' => [
@@ -109,7 +110,7 @@ class AdminSignupController extends Controller
                     $upload = $cloudinary->uploadApi()->upload($file->getRealPath(), [
                         'folder' => 'theatres'
                     ]);
-                    
+
                     if ($upload && isset($upload['secure_url'])) {
                         $data['theatre_pic'] = $upload['secure_url'];
                         Log::info('Manual Cloudinary upload successful: ' . $upload['secure_url']);
@@ -119,7 +120,7 @@ class AdminSignupController extends Controller
                 } catch (\Exception $uploadError) {
                     Log::error('Cloudinary Engine Error: ' . $uploadError->getMessage());
                     return response()->json([
-                        'status' => false, 
+                        'status' => false,
                         'message' => 'Cloudinary Upload Error: ' . $uploadError->getMessage()
                     ], 500);
                 }
@@ -140,6 +141,52 @@ class AdminSignupController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Error updating profile: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function showSeatingLayout()
+    {
+        $adminId = session('admin_id');
+        $admin = AdminSignupModel::find($adminId);
+        return view('admin.screens.seating', compact('admin'));
+    }
+
+    public function saveSeatingLayout(Request $request)
+    {
+        $adminId = session('admin_id');
+        if (!$adminId) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'layout_data' => 'required|array'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $admin = AdminSignupModel::where('_id', $adminId)->first();
+            if (!$admin) {
+                return response()->json(['status' => false, 'message' => 'Admin not found'], 404);
+            }
+
+            // Save the layout JSON to the model
+            $admin->update([
+                'seating_layout' => $request->layout_data
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Seating layout saved successfully!'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error saving layout: ' . $e->getMessage()
             ], 500);
         }
     }

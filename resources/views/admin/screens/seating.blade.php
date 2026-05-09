@@ -136,24 +136,8 @@
                     </div>
 
                     <div class="glass p-6 rounded-2xl border border-slate-800">
-                        <h3 class="text-lg font-bold text-white mb-4">Ticket Pricing (₹)</h3>
-                        <div class="space-y-4 mb-6">
-                            <div class="flex items-center justify-between">
-                                <label class="text-sm font-semibold text-indigo-400">Standard</label>
-                                <input type="number" id="price-standard" value="150" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-indigo-500 text-right">
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <label class="text-sm font-semibold text-pink-400">Premium</label>
-                                <input type="number" id="price-premium" value="250" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-pink-500 text-right">
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <label class="text-sm font-semibold text-yellow-400">VIP / Recliner</label>
-                                <input type="number" id="price-vip" value="400" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-yellow-500 text-right">
-                            </div>
-                        </div>
-
                         <button onclick="saveLayout()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center">
-                            <i class="fa-solid fa-save mr-2"></i> Save Master Layout
+                            <i class="fa-solid fa-save mr-2"></i> Save Seating Layout
                         </button>
                     </div>
                 </div>
@@ -191,16 +175,39 @@
         </main>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
+        // CSRF Setup for AJAX
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
         let ROWS = 10;
         let COLS = 20;
         let currentBrush = 'standard';
-        let layout = [];
+        let layout = @json($admin->seating_layout['layout'] ?? []);
 
         // DOM Elements
         const gridEl = document.getElementById('theatre-grid');
         const rowLabelsEl = document.getElementById('row-labels');
         const rowLabelsRightEl = document.getElementById('row-labels-right');
+
+        function initLayout() {
+            const savedData = @json($admin->seating_layout ?? null);
+            if (savedData) {
+                document.getElementById('rowCount').value = savedData.rows;
+                document.getElementById('colCount').value = savedData.columns;
+                
+                ROWS = savedData.rows;
+                COLS = savedData.columns;
+                layout = savedData.layout;
+                renderGrid();
+            } else {
+                generateGrid();
+            }
+        }
 
         function generateGrid() {
             ROWS = parseInt(document.getElementById('rowCount').value) || 10;
@@ -211,25 +218,24 @@
 
             layout = [];
             for(let r = 0; r < ROWS; r++) {
-                let row = [];
+                let rowArr = [];
                 for(let c = 0; c < COLS; c++) {
-                    row.push({
-                        rowLabel: String.fromCharCode(65 + r),
-                        colNum: c + 1,
-                        id: `${String.fromCharCode(65 + r)}${c + 1}`,
+                    const rowLabel = String.fromCharCode(65 + r);
+                    const colNum = c + 1;
+                    rowArr.push({
+                        rowLabel: rowLabel,
+                        colNum: colNum,
+                        id: `${rowLabel}${colNum}`,
                         type: 'standard'
                     });
                 }
-                layout.push(row);
+                layout.push(rowArr);
             }
             renderGrid();
         }
 
-        // Brush Logic
         function setBrush(type) {
             currentBrush = type;
-            
-            // Reset UI buttons
             const buttons = ['standard', 'premium', 'vip', 'empty', 'blocked'];
             buttons.forEach(btn => {
                 const el = document.getElementById(`btn-${btn}`);
@@ -262,7 +268,6 @@
             }
         }
 
-        // Render Grid
         function renderGrid() {
             gridEl.innerHTML = '';
             rowLabelsEl.innerHTML = '';
@@ -270,7 +275,6 @@
             gridEl.style.gridTemplateColumns = `repeat(${COLS}, minmax(0, 1fr))`;
 
             for(let r = 0; r < ROWS; r++) {
-                // Add labels
                 const label = document.createElement('div');
                 label.className = 'w-6 h-6 flex items-center justify-center text-xs font-bold text-slate-500';
                 label.innerText = String.fromCharCode(65 + r);
@@ -279,33 +283,25 @@
 
                 for(let c = 0; c < COLS; c++) {
                     const seatData = layout[r][c];
-                    
                     const seat = document.createElement('div');
                     seat.className = `seat ${seatData.type} w-6 h-6 sm:w-8 sm:h-8 rounded cursor-pointer flex items-center justify-center text-[8px] font-bold text-white/50`;
                     
                     if(seatData.type !== 'empty') {
-                        seat.innerText = seatData.colNum;
+                        seat.innerText = seatData.id; // Showing A1, A2, etc.
                     }
 
-                    // Helper to update seat visual
                     const updateSeatVisual = () => {
                         seat.className = `seat ${seatData.type} w-6 h-6 sm:w-8 sm:h-8 rounded cursor-pointer flex items-center justify-center text-[8px] font-bold text-white/50`;
-                        if(seatData.type !== 'empty') {
-                            seat.innerText = seatData.colNum;
-                        } else {
-                            seat.innerText = '';
-                        }
+                        seat.innerText = seatData.type !== 'empty' ? seatData.id : '';
                     };
 
-                    // Click event to paint
                     seat.addEventListener('mousedown', (e) => {
                         seatData.type = currentBrush;
                         updateSeatVisual();
                     });
 
-                    // Drag event to paint
                     seat.addEventListener('mouseenter', (e) => {
-                        if(e.buttons === 1) { // Left mouse button down
+                        if(e.buttons === 1) {
                             seatData.type = currentBrush;
                             updateSeatVisual();
                         }
@@ -316,36 +312,43 @@
             }
         }
 
-        // Save Layout
         function saveLayout() {
-            const pricing = {
-                standard: parseFloat(document.getElementById('price-standard').value) || 0,
-                premium: parseFloat(document.getElementById('price-premium').value) || 0,
-                vip: parseFloat(document.getElementById('price-vip').value) || 0
-            };
-
             const screenData = {
                 rows: ROWS,
                 columns: COLS,
-                pricing: pricing,
                 layout: layout
             };
 
-            console.log("Master Layout Saved!", screenData);
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Layout Saved!',
-                html: `Layout generated successfully.<br><br><b>Pricing set to:</b><br>Standard: ₹${pricing.standard} | Premium: ₹${pricing.premium} | VIP: ₹${pricing.vip}`,
-                background: 'rgba(15, 23, 42, 0.95)',
-                color: '#fff',
-                confirmButtonColor: '#10b981',
-                customClass: { popup: 'border border-slate-800 rounded-3xl backdrop-blur-md' }
+            $.ajax({
+                url: "{{ route('admin.screens.seating.save') }}",
+                type: "POST",
+                data: { layout_data: screenData },
+                success: function(response) {
+                    if (response.status) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Layout Saved!',
+                            text: 'Seating layout has been saved successfully.',
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            color: '#fff',
+                            confirmButtonColor: '#10b981',
+                            customClass: { popup: 'border border-slate-800 rounded-3xl backdrop-blur-md' }
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: xhr.responseJSON?.message || 'Failed to save layout.',
+                        background: 'rgba(15, 23, 42, 0.95)',
+                        color: '#fff'
+                    });
+                }
             });
         }
 
-        // Init
-        generateGrid();
+        initLayout();
     </script>
 </body>
 </html>

@@ -128,6 +128,15 @@
                         </div>
 
                         <div class="sm:col-span-1">
+                            <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Theatre Type</label>
+                            <select name="theatre_type" class="form-input w-full px-4 py-3 rounded-xl">
+                                <option value="" disabled {{ !isset($admin->theatre_type) ? 'selected' : '' }}>Select Type</option>
+                                <option value="Single Screen" {{ ($admin->theatre_type ?? '') == 'Single Screen' ? 'selected' : '' }}>Single Screen</option>
+                                <option value="Multiplex" {{ ($admin->theatre_type ?? '') == 'Multiplex' ? 'selected' : '' }}>Multiplex</option>
+                            </select>
+                        </div>
+
+                        <div class="sm:col-span-1">
                             <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Seating Capacity</label>
                             <input type="number" name="capacity" value="{{ $admin->capacity ?? '' }}" 
                                    class="form-input w-full px-4 py-3 rounded-xl" placeholder="Total seats">

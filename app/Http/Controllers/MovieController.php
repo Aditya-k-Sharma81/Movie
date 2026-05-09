@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Movie;
+use App\Models\AdminSignupModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -47,7 +48,11 @@ class MovieController extends Controller
 
     public function create()
     {
-        return view('admin.movies.add');
+        $adminId = session('admin_id');
+        $admin = AdminSignupModel::find($adminId);
+        $masterLayout = $admin->seating_layout ?? null;
+        
+        return view('admin.movies.add', compact('masterLayout'));
     }
 
     public function store(Request $request)
@@ -63,6 +68,9 @@ class MovieController extends Controller
             'language' => 'required|string',
             'description' => 'required|string',
             'poster' => 'required|image|mimes:jpeg,png,jpg,webp',
+            'price_normal' => 'required|numeric|min:0',
+            'price_premium' => 'required|numeric|min:0',
+            'price_vip' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -101,6 +109,34 @@ class MovieController extends Controller
                 }
             }
 
+            // Add seating layout if provided, otherwise use master layout
+            if ($request->has('seating_layout') && !empty($request->seating_layout)) {
+                $layout = is_string($request->seating_layout) ? json_decode($request->seating_layout, true) : $request->seating_layout;
+                
+                // Ensure every seat has status 'available'
+                if (isset($layout['layout'])) {
+                    foreach ($layout['layout'] as &$row) {
+                        foreach ($row as &$seat) {
+                            $seat['status'] = 'available';
+                        }
+                    }
+                }
+                $data['seating_layout'] = $layout;
+            } else {
+                $admin = AdminSignupModel::find(session('admin_id'));
+                $layout = $admin->seating_layout;
+                
+                // Ensure every seat has status 'available'
+                if (isset($layout['layout'])) {
+                    foreach ($layout['layout'] as &$row) {
+                        foreach ($row as &$seat) {
+                            $seat['status'] = 'available';
+                        }
+                    }
+                }
+                $data['seating_layout'] = $layout;
+            }
+
             // Save Movie to Database
             Movie::create($data);
 
@@ -126,7 +162,11 @@ class MovieController extends Controller
         $movie->category = is_string($movie->category) ? json_decode($movie->category, true) ?? [$movie->category] : (is_array($movie->category) ? $movie->category : []);
         $movie->genre = is_string($movie->genre) ? json_decode($movie->genre, true) ?? [$movie->genre] : (is_array($movie->genre) ? $movie->genre : []);
         
-        return view('admin.movies.edit', compact('movie'));
+        $adminId = session('admin_id');
+        $admin = AdminSignupModel::find($adminId);
+        $masterLayout = $admin->seating_layout ?? null;
+
+        return view('admin.movies.edit', compact('movie', 'masterLayout'));
     }
 
     public function update(Request $request, $id)
@@ -142,6 +182,9 @@ class MovieController extends Controller
             'language' => 'required|string',
             'description' => 'required|string',
             'poster' => 'nullable|image|mimes:jpeg,png,jpg,webp', // Poster is optional on edit
+            'price_normal' => 'required|numeric|min:0',
+            'price_premium' => 'required|numeric|min:0',
+            'price_vip' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -179,6 +222,21 @@ class MovieController extends Controller
                 } else {
                     throw new \Exception('Cloudinary upload failed: secure_url not returned.');
                 }
+            }
+
+            // Handle seating_layout update
+            if ($request->has('seating_layout') && !empty($request->seating_layout)) {
+                $layout = is_string($request->seating_layout) ? json_decode($request->seating_layout, true) : $request->seating_layout;
+                
+                // Ensure every seat has status 'available'
+                if (isset($layout['layout'])) {
+                    foreach ($layout['layout'] as &$row) {
+                        foreach ($row as &$seat) {
+                            $seat['status'] = 'available';
+                        }
+                    }
+                }
+                $data['seating_layout'] = $layout;
             }
 
             // Update Movie

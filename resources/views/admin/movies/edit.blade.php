@@ -44,6 +44,21 @@
             outline: none;
         }
 
+        /* Seating Builder Styles */
+        .seat { transition: all 0.2s ease; cursor: pointer; }
+        .seat:hover { transform: scale(1.1); }
+        .seat.standard { background-color: #6366f1; }
+        .seat.premium { background-color: #ec4899; }
+        .seat.vip { background-color: #eab308; }
+        .seat.blocked { background-color: #ef4444; opacity: 0.5; }
+        .seat.empty { background-color: transparent; border: 1px dashed rgba(255,255,255,0.2); }
+        .seat-grid { display: grid; gap: 0.5rem; }
+        .screen-curve {
+            background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            box-shadow: 0 10px 30px -5px rgba(255, 255, 255, 0.3);
+        }
+
         /* Custom Select2 Dark Theme styling */
         .select2-container--default .select2-selection--multiple {
             background-color: rgba(30, 41, 59, 0.5);
@@ -166,6 +181,22 @@
                     <input type="number" name="duration" value="{{ $movie->duration }}" class="form-input w-full px-4 py-3 rounded-xl" placeholder="e.g. 148">
                 </div>
 
+                <!-- Pricing Section -->
+                <div class="sm:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 p-4 rounded-xl border border-slate-800 bg-slate-900/30">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Normal Ticket Price (₹)</label>
+                        <input type="number" name="price_normal" value="{{ $movie->price_normal }}" class="form-input w-full px-4 py-3 rounded-xl" placeholder="e.g. 150">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Premium Ticket Price (₹)</label>
+                        <input type="number" name="price_premium" value="{{ $movie->price_premium }}" class="form-input w-full px-4 py-3 rounded-xl" placeholder="e.g. 250">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 uppercase mb-2">VIP Ticket Price (₹)</label>
+                        <input type="number" name="price_vip" value="{{ $movie->price_vip }}" class="form-input w-full px-4 py-3 rounded-xl" placeholder="e.g. 500">
+                    </div>
+                </div>
+
                 <!-- Release Date -->
                 <div>
                     <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Release Date</label>
@@ -182,6 +213,55 @@
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Description</label>
                     <textarea name="description" rows="4" class="form-input w-full px-4 py-3 rounded-xl" placeholder="Write a short description of the movie...">{{ $movie->description }}</textarea>
+                </div>
+
+                <!-- Seating Arrangement Section -->
+                <div class="sm:col-span-2 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-white">Seating Arrangement</h3>
+                        <p class="text-xs text-slate-400">Tweak the layout for this specific movie.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                        <!-- Tools -->
+                        <div class="xl:col-span-1 space-y-4">
+                            <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/50">
+                                <label class="block text-xs font-medium text-slate-500 uppercase mb-3">Brush Tool</label>
+                                <div class="grid grid-cols-1 gap-2">
+                                    <button type="button" onclick="setBrush('standard')" id="btn-standard" class="flex items-center p-2 rounded-lg border border-indigo-500 bg-indigo-500/20 text-white text-xs">
+                                        <div class="w-4 h-4 rounded bg-indigo-500 mr-2"></div> Standard
+                                    </button>
+                                    <button type="button" onclick="setBrush('premium')" id="btn-premium" class="flex items-center p-2 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs">
+                                        <div class="w-4 h-4 rounded bg-pink-500 mr-2"></div> Premium
+                                    </button>
+                                    <button type="button" onclick="setBrush('vip')" id="btn-vip" class="flex items-center p-2 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs">
+                                        <div class="w-4 h-4 rounded bg-yellow-500 mr-2"></div> VIP
+                                    </button>
+                                    <button type="button" onclick="setBrush('empty')" id="btn-empty" class="flex items-center p-2 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs">
+                                        <div class="w-4 h-4 rounded border border-dashed border-slate-500 mr-2"></div> Aisle
+                                    </button>
+                                    <button type="button" onclick="setBrush('blocked')" id="btn-blocked" class="flex items-center p-2 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs">
+                                        <div class="w-4 h-4 rounded bg-red-500 opacity-50 mr-2"></div> Blocked
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grid -->
+                        <div class="xl:col-span-3 p-6 rounded-xl border border-slate-800 bg-slate-900/50 flex flex-col items-center overflow-x-auto">
+                            <div class="w-48 h-4 mb-8 relative flex items-center justify-center">
+                                <div class="absolute inset-0 screen-curve"></div>
+                                <span class="relative text-[10px] text-white/50 font-bold tracking-widest uppercase">Screen</span>
+                            </div>
+                            
+                            <div class="flex">
+                                <div class="flex flex-col justify-between mr-2 py-1" id="row-labels"></div>
+                                <div class="seat-grid" id="theatre-grid"></div>
+                                <div class="flex flex-col justify-between ml-2 py-1" id="row-labels-right"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="seating_layout" id="seating_layout_input">
                 </div>
 
                 <!-- Movie Poster -->
@@ -221,13 +301,85 @@
                 width: '100%'
             });
 
+            // Seating Builder Logic
+            let ROWS = 10;
+            let COLS = 20;
+            let currentBrush = 'standard';
+            // Prefer movie-specific layout, fallback to master layout
+            let layout = @json($movie->seating_layout['layout'] ?? $masterLayout['layout'] ?? []);
+            
+            const gridEl = document.getElementById('theatre-grid');
+            const rowLabelsEl = document.getElementById('row-labels');
+            const rowLabelsRightEl = document.getElementById('row-labels-right');
+
+            function initSeating() {
+                const savedLayout = @json($movie->seating_layout ?? $masterLayout ?? null);
+                if (savedLayout) {
+                    ROWS = savedLayout.rows;
+                    COLS = savedLayout.columns;
+                    layout = savedLayout.layout;
+                    renderGrid();
+                }
+            }
+
+            window.setBrush = function(type) {
+                currentBrush = type;
+                ['standard', 'premium', 'vip', 'empty', 'blocked'].forEach(btn => {
+                    const el = document.getElementById(`btn-${btn}`);
+                    if (el) {
+                        el.className = `flex items-center p-2 rounded-lg border transition-all text-xs ${
+                            btn === type ? 'border-indigo-500 bg-indigo-500/20 text-white' : 'border-slate-700 hover:bg-slate-800 text-slate-300'
+                        }`;
+                    }
+                });
+            }
+
+            function renderGrid() {
+                gridEl.innerHTML = '';
+                rowLabelsEl.innerHTML = '';
+                rowLabelsRightEl.innerHTML = '';
+                gridEl.style.gridTemplateColumns = `repeat(${COLS}, minmax(0, 1fr))`;
+
+                for(let r = 0; r < ROWS; r++) {
+                    const label = document.createElement('div');
+                    label.className = 'w-4 h-4 flex items-center justify-center text-[10px] font-bold text-slate-500';
+                    label.innerText = String.fromCharCode(65 + r);
+                    rowLabelsEl.appendChild(label.cloneNode(true));
+                    rowLabelsRightEl.appendChild(label);
+
+                    for(let c = 0; c < COLS; c++) {
+                        const seatData = layout[r][c];
+                        const seat = document.createElement('div');
+                        seat.className = `seat ${seatData.type} w-4 h-4 rounded-sm flex items-center justify-center text-[6px] font-bold text-white/50`;
+                        seat.innerText = seatData.type !== 'empty' ? seatData.id : '';
+
+                        const updateSeatVisual = () => {
+                            seat.className = `seat ${seatData.type} w-4 h-4 rounded-sm flex items-center justify-center text-[6px] font-bold text-white/50`;
+                            seat.innerText = seatData.type !== 'empty' ? seatData.id : '';
+                            // Sync with hidden input
+                            document.getElementById('seating_layout_input').value = JSON.stringify({
+                                rows: ROWS,
+                                columns: COLS,
+                                layout: layout
+                            });
+                        };
+
+                        seat.addEventListener('mousedown', (e) => { seatData.type = currentBrush; updateSeatVisual(); });
+                        seat.addEventListener('mouseenter', (e) => { if(e.buttons === 1) { seatData.type = currentBrush; updateSeatVisual(); } });
+                        gridEl.appendChild(seat);
+                    }
+                }
+                document.getElementById('seating_layout_input').value = JSON.stringify({ rows: ROWS, columns: COLS, layout: layout });
+            }
+
+            initSeating();
+
             // Handle Form Submission
             $('#editMovieForm').on('submit', function(e) {
                 e.preventDefault();
                 
                 let formData = new FormData(this);
                 let $btn = $('#submitBtn');
-                let originalText = $btn.text();
                 
                 $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-2"></i> Updating...');
 

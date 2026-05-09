@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -65,10 +66,8 @@
 
                 <a href="{{ route('admin.screens.seating') }}"
                     class="flex items-center px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
-                    <svg class="w-5 h-5 mr-3 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                    </svg>
-                    Seating Layout
+                    <i class="fa-solid fa-chair w-5 h-5 mr-3 text-blue-400"></i>
+                    Seating Map
                 </a>
 
                 <a href="{{ route('admin.profile') }}"
@@ -160,7 +159,7 @@
                             </a>
                             <a href="{{ route('admin.screens.seating') }}"
                                 class="block text-center w-full border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white font-bold py-3 rounded-xl transition-all">
-                                Manage Seating
+                                Seating Map
                             </a>
                         </div>
                     </div>

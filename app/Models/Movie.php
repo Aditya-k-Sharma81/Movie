@@ -20,5 +20,9 @@ class Movie extends Model
         'language',
         'description',
         'poster',
+        'price_normal',
+        'price_premium',
+        'price_vip',
+        'seating_layout',
     ];
 }

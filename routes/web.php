@@ -40,9 +40,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Screens / Seating Layout Builder
-        Route::get('/screens/seating', function () {
-            return view('admin.screens.seating');
-        })->name('screens.seating');
+        Route::get('/screens/seating', [AdminSignupController::class, 'showSeatingLayout'])->name('screens.seating');
+        Route::post('/screens/seating/save', [AdminSignupController::class, 'saveSeatingLayout'])->name('screens.seating.save');
+
 
         // Logout
         Route::get('/logout', [AdminSignupController::class, 'logout'])->name('logout');
