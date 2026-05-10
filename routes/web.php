@@ -2,6 +2,34 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminSignupController;
+use App\Http\Controllers\UserAuthController;
+
+Route::get('/register', function () {
+    return view('user.signup');
+})->name('register');
+
+Route::post('/register', [UserAuthController::class, 'register'])->name('register.post');
+
+Route::get('/login', function () {
+    return view('user.login');
+})->name('login');
+
+Route::post('/login', [UserAuthController::class, 'login'])->name('login.post');
+
+Route::middleware(['user.auth'])->group(function () {
+    Route::get('/', [UserAuthController::class, 'index'])->name('dashboard');
+    Route::get('/fetch-movies', [UserAuthController::class, 'fetchMovies'])->name('fetch.movies');
+
+    Route::get('/logout', [UserAuthController::class, 'logout'])->name('logout');
+
+    Route::get('/movies', [UserAuthController::class, 'movies'])->name('movies');
+
+    Route::get('/bookings', function () {
+        return view('user.bookings');
+    })->name('bookings');
+
+    Route::get('/movie/{id}', [UserAuthController::class, 'movieDetails'])->name('movie.details');
+});
 
 Route::prefix('admin')->name('admin.')->group(function () {
 
