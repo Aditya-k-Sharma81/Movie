@@ -75,87 +75,178 @@
         </div>
 
         <!-- Movies Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
 
             @forelse($movies as $movie)
-            <div class="glass rounded-2xl overflow-hidden hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/20 hover:border-indigo-500/50 transition-all duration-300 flex flex-col">
-                <div class="relative h-[340px] w-full overflow-hidden bg-slate-900">
-                    <img src="{{ $movie->poster ?? 'https://via.placeholder.com/400x600/1e293b/ffffff?text=Movie+Poster' }}" alt="{{ $movie->title }}"
-                        class="w-full h-full object-cover object-center">
-                        
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent pointer-events-none"></div>
-                    <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-                        @php
-                            $genres = is_array($movie->genre) ? $movie->genre : (is_string($movie->genre) ? json_decode($movie->genre, true) ?? [$movie->genre] : ['Genre']);
-                        @endphp
-                        <span class="bg-indigo-600/90 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider max-w-[70%] line-clamp-1" title="{{ implode(', ', $genres) }}">
-                            {{ implode(', ', $genres) }}
-                        </span>
-                        <span class="text-xs text-white/90 font-medium bg-slate-800/80 px-2 py-1 rounded-md backdrop-blur shadow-sm">
-                            <i class="fa-regular fa-clock mr-1 text-indigo-400"></i>{{ $movie->duration }}m
-                        </span>
-                    </div>
-                </div>
-                <div class="p-5 flex-1 flex flex-col">
-                    <h3 class="text-lg font-bold text-white mb-3 line-clamp-1 cursor-pointer hover:text-indigo-300 transition-colors" onclick="this.classList.toggle('line-clamp-1')" title="Click to toggle full title">{{ $movie->title }}</h3>
+            @php
+                $genres = is_array($movie->genre) ? $movie->genre : (is_string($movie->genre) ? json_decode($movie->genre, true) ?? [$movie->genre] : []);
+                $categories = is_array($movie->category) ? $movie->category : (is_string($movie->category) ? json_decode($movie->category, true) ?? [$movie->category] : []);
+                $startTime = \Carbon\Carbon::parse($movie->start_time);
+                
+                // Clean version of movie for JS modal
+                $movieJson = [
+                    'id' => (string) $movie->id,
+                    'title' => $movie->title,
+                    'poster' => $movie->poster,
+                    'genre' => $genres,
+                    'category' => $categories,
+                    'duration' => $movie->duration,
+                    'description' => $movie->description,
+                    'language' => $movie->language,
+                    'release_date' => \Carbon\Carbon::parse($movie->release_date)->format('d M, Y'),
+                    'start_time' => $startTime->format('d M, Y h:i A'),
+                    'end_time' => \Carbon\Carbon::parse($movie->end_time)->format('d M, Y h:i A'),
+                    'price_normal' => $movie->price_normal,
+                    'price_premium' => $movie->price_premium,
+                    'price_vip' => $movie->price_vip,
+                ];
+            @endphp
+            <div class="group cursor-pointer" onclick="showMovieDetails({{ json_encode($movieJson) }})">
+                <div class="relative aspect-[2/3] rounded-3xl overflow-hidden mb-3 border border-slate-800 transition-all group-hover:scale-105 group-hover:border-indigo-500/50 group-hover:shadow-xl group-hover:shadow-indigo-900/10">
+                    <img src="{{ $movie->poster ?? 'https://via.placeholder.com/400x600?text=No+Poster' }}" alt="{{ $movie->title }}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80"></div>
                     
-                    <div class="mb-4 flex-1 flex flex-col justify-start">
-                        <p class="text-[12px] text-slate-300 flex items-center mb-4">
-                            <i class="fa-solid fa-calendar-days w-4 text-indigo-400"></i>
-                            <span class="ml-1 font-medium">Release:</span> 
-                            <span class="ml-1 text-slate-400">{{ \Carbon\Carbon::parse($movie->release_date)->format('d M, Y') }}</span>
-                        </p>
-                        
-                        <!-- Shows Timeline Box -->
-                        <div class="bg-slate-900/50 rounded-xl p-3 border border-slate-700/50 mt-auto">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-[9px] uppercase font-bold tracking-wider text-emerald-400"><i class="fa-solid fa-play mr-1"></i> Starts</span>
-                                <span class="text-[9px] uppercase font-bold tracking-wider text-rose-400">Ends <i class="fa-solid fa-stop ml-1"></i></span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div class="text-left">
-                                    <div class="text-[11px] text-slate-200 font-medium">{{ \Carbon\Carbon::parse($movie->start_time)->format('d M, Y') }}</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">{{ \Carbon\Carbon::parse($movie->start_time)->format('h:i A') }}</div>
-                                </div>
-                                <div class="flex-1 flex items-center justify-center px-2 opacity-50">
-                                    <div class="h-[1px] w-full bg-slate-600"></div>
-                                    <div class="w-1 h-1 rounded-full bg-slate-500 mx-1"></div>
-                                    <div class="h-[1px] w-full bg-slate-600"></div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-[11px] text-slate-200 font-medium">{{ \Carbon\Carbon::parse($movie->end_time)->format('d M, Y') }}</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">{{ \Carbon\Carbon::parse($movie->end_time)->format('h:i A') }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-between pt-3 border-t border-slate-700/50 mt-auto">
-                        <a href="{{ route('admin.movies.edit', $movie->id) }}" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold px-2 py-1 -ml-2 rounded hover:bg-indigo-500/10 transition-colors">
-                            <i class="fa-solid fa-pen mr-1"></i> Edit
-                        </a>
-                        <button onclick="deleteMovie('{{ $movie->id }}')" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 -mr-2 rounded hover:bg-rose-500/10 transition-colors">
-                            <i class="fa-solid fa-trash mr-1"></i> Delete
-                        </button>
+                    <div class="absolute bottom-3 left-3 flex flex-col gap-1">
+                        <span class="px-2 py-0.5 bg-indigo-600 text-[9px] font-bold text-white rounded uppercase tracking-wider w-fit shadow-lg shadow-indigo-900/40">
+                            {{ $startTime->format('h:i A') }}
+                        </span>
                     </div>
                 </div>
+                <h3 class="text-white font-bold text-sm truncate group-hover:text-indigo-400 transition-colors">{{ $movie->title }}</h3>
+                <p class="text-slate-500 text-[10px] truncate">
+                    {{ implode(' • ', $genres) }}
+                </p>
             </div>
             @empty
-            <div
-                class="col-span-full glass rounded-2xl p-6 flex flex-col items-center justify-center text-center border-dashed border-slate-700">
-                <div
-                    class="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center text-slate-400 mb-4">
-                    <i class="fa-solid fa-film text-2xl"></i>
+            <div class="col-span-full glass rounded-3xl p-12 flex flex-col items-center justify-center text-center border-dashed border-slate-700">
+                <div class="w-20 h-20 rounded-full bg-slate-900/50 flex items-center justify-center text-slate-500 mb-4 border border-slate-800">
+                    <i class="fa-solid fa-film text-3xl"></i>
                 </div>
-                <h3 class="text-sm font-semibold text-white mb-1">No Movies Found</h3>
-                <p class="text-xs text-slate-500">There are no movies currently listed in the database.</p>
+                <h3 class="text-lg font-bold text-white mb-1">No Movies Found</h3>
+                <p class="text-sm text-slate-500">Add your first movie to see it here.</p>
             </div>
             @endforelse
+        </div>
+    </div>
 
+    <!-- Movie Details Modal -->
+    <div id="movieModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
+        <div class="glass relative w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl transform transition-all scale-95 opacity-0 duration-300" id="modalPanel">
+            <button onclick="closeModal()" class="absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-slate-900/50 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div id="modalContent">
+                <!-- Data injected here -->
+            </div>
         </div>
     </div>
 
     <script>
+        function showMovieDetails(movie) {
+            const modal = document.getElementById('movieModal');
+            const panel = document.getElementById('modalPanel');
+            const content = document.getElementById('modalContent');
+
+            content.innerHTML = `
+                <div class="flex flex-col md:flex-row gap-8 p-6 md:p-8">
+                    <!-- Poster & Meta -->
+                    <div class="w-full md:w-1/3 flex flex-col gap-4">
+                        <div class="aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-white/10 group-hover:scale-[1.02] transition-transform duration-500">
+                            <img src="${movie.poster || 'https://via.placeholder.com/400x600?text=No+Poster'}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            ${movie.genre.map(g => `<span class="px-2 py-0.5 bg-slate-800 text-slate-400 text-[9px] font-bold rounded uppercase border border-slate-700 tracking-tighter">${g}</span>`).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="flex-1 flex flex-col">
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            ${movie.category.map(cat => `<span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold rounded border border-indigo-500/20 uppercase tracking-wider">${cat}</span>`).join('')}
+                        </div>
+                        <h2 class="text-3xl font-black text-white mb-4 leading-tight">${movie.title}</h2>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="p-3 rounded-xl bg-slate-900/50 border border-white/5">
+                                <p class="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Release Date</p>
+                                <p class="text-xs text-slate-200 font-bold"><i class="fa-solid fa-calendar-check mr-1.5 text-indigo-400"></i>${movie.release_date}</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-900/50 border border-white/5">
+                                <p class="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Duration</p>
+                                <p class="text-xs text-slate-200 font-bold"><i class="fa-regular fa-clock mr-1.5 text-indigo-400"></i>${movie.duration}m</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6 mb-8">
+                            <!-- Show Timeline -->
+                            <div class="relative pl-6 border-l-2 border-slate-800 py-1 space-y-6">
+                                <div class="relative">
+                                    <div class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] border-2 border-slate-950"></div>
+                                    <p class="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Show Starts</p>
+                                    <p class="text-sm text-white font-black tracking-tight">${movie.start_time}</p>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)] border-2 border-slate-950"></div>
+                                    <p class="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Show Ends</p>
+                                    <p class="text-sm text-white font-black tracking-tight">${movie.end_time}</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="text-center p-2 rounded-lg bg-slate-900/30 border border-white/5">
+                                    <p class="text-[8px] text-slate-500 uppercase font-black mb-1">Normal</p>
+                                    <p class="text-xs text-indigo-400 font-bold">₹${movie.price_normal}</p>
+                                </div>
+                                <div class="text-center p-2 rounded-lg bg-slate-900/30 border border-white/5">
+                                    <p class="text-[8px] text-slate-500 uppercase font-black mb-1">Premium</p>
+                                    <p class="text-xs text-pink-400 font-bold">₹${movie.price_premium}</p>
+                                </div>
+                                <div class="text-center p-2 rounded-lg bg-slate-900/30 border border-white/5">
+                                    <p class="text-[8px] text-slate-500 uppercase font-black mb-1">VIP</p>
+                                    <p class="text-xs text-amber-400 font-bold">₹${movie.price_vip}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5 mb-8">
+                            <p class="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2">Synopsis</p>
+                            <p class="text-[11px] text-slate-400 leading-relaxed font-medium">${movie.description}</p>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="mt-auto flex items-center gap-4">
+                            <a href="/admin/movies/edit/${movie.id}" class="flex-1 bg-white text-slate-950 font-black py-4 px-6 rounded-2xl hover:bg-indigo-400 hover:text-white transition-all text-center uppercase tracking-widest text-[10px] shadow-xl">
+                                <i class="fa-solid fa-pen-to-square mr-2"></i> Edit Movie
+                            </a>
+                            <button onclick="deleteMovie('${movie.id}')" class="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-xl">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                panel.classList.remove('scale-95', 'opacity-0');
+                panel.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('movieModal');
+            const panel = document.getElementById('modalPanel');
+            
+            panel.classList.add('scale-95', 'opacity-0');
+            panel.classList.remove('scale-100', 'opacity-100');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
         function deleteMovie(id) {
             Swal.fire({
                 title: 'Are you sure?',

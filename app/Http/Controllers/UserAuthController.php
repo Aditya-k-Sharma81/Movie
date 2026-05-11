@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Movie;
+use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -163,6 +164,141 @@ class UserAuthController extends Controller
             'status' => false,
             'message' => 'Invalid email or password.'
         ], 401);
+    }
+
+    public function myBookings()
+    {
+        $userId = session('user_id');
+        $bookings = Booking::where('user_id', $userId)
+                           ->orderBy('booking_date', 'desc')
+                           ->get();
+
+        // Attach movie details to each booking
+        $bookings = $bookings->map(function ($booking) {
+            $movie = Movie::find($booking->movie_id);
+            $booking->movie = $movie;
+            return $booking;
+        });
+
+        return view('user.bookings', compact('bookings'));
+    }
+
+    public function cancelBooking($id)
+    {
+        $userId = session('user_id');
+        $booking = Booking::where('_id', $id)->where('user_id', $userId)->first();
+
+        if (!$booking) {
+            return response()->json(['status' => false, 'message' => 'Booking not found.'], 404);
+        }
+
+        // Find the movie and free up the seats
+        $movie = Movie::find($booking->movie_id);
+        if ($movie) {
+            $layout = $movie->seating_layout;
+            foreach ($layout['layout'] as &$row) {
+                foreach ($row as &$seat) {
+                    if (in_array($seat['id'], $booking->seats)) {
+                        $seat['status'] = 'available';
+                        unset($seat['booked_at']);
+                        unset($seat['user_id']);
+                    }
+                }
+            }
+            $movie->seating_layout = $layout;
+            $movie->save();
+        }
+
+        $booking->delete();
+
+        return response()->json(['status' => true, 'message' => 'Booking cancelled successfully.']);
+    }
+
+    public function fetchSeats($id)
+    {
+        $movie = Movie::find($id);
+        if (!$movie) return response()->json(['status' => false], 404);
+
+        return response()->json([
+            'status' => true,
+            'layout' => $movie->seating_layout
+        ]);
+    }
+
+    public function bookTickets(Request $request, $id)
+    {
+        $selectedSeatIds = $request->input('seats', []); 
+        $attendees = $request->input('attendees', []); // Array of objects {name, email, phone}
+
+        if (empty($selectedSeatIds)) {
+            return response()->json(['status' => false, 'message' => 'No seats selected.'], 400);
+        }
+
+        if (count($selectedSeatIds) !== count($attendees)) {
+            return response()->json(['status' => false, 'message' => 'Please provide details for every seat selected.'], 400);
+        }
+
+        $movie = Movie::find($id);
+        if (!$movie) return response()->json(['status' => false, 'message' => 'Movie not found.'], 404);
+        
+        $layout = $movie->seating_layout;
+        $alreadyBooked = [];
+        $totalPrice = 0;
+
+        // Pricing map
+        $prices = [
+            'standard' => (float)$movie->price_normal,
+            'premium' => (float)$movie->price_premium,
+            'vip' => (float)$movie->price_vip
+        ];
+
+        // Iterate through the layout and update selected seats
+        foreach ($layout['layout'] as &$row) {
+            foreach ($row as &$seat) {
+                if (in_array($seat['id'], $selectedSeatIds)) {
+                    if ($seat['status'] !== 'available') {
+                        $alreadyBooked[] = $seat['id'];
+                        continue;
+                    }
+                    $seat['status'] = 'booked';
+                    $seat['booked_at'] = now('Asia/Kolkata')->toDateTimeString();
+                    $seat['user_id'] = session('user_id');
+                    
+                    // Add to total price
+                    $totalPrice += $prices[$seat['type']] ?? 0;
+                }
+            }
+        }
+
+        if (!empty($alreadyBooked)) {
+            return response()->json([
+                'status' => false, 
+                'message' => 'Some seats were already booked: ' . implode(', ', $alreadyBooked)
+            ], 400);
+        }
+
+        // 1. Update Movie Layout
+        $movie->seating_layout = $layout;
+        $movie->save();
+
+        // 2. Create Separate Booking Record
+        Booking::create([
+            'user_id' => session('user_id'),
+            'movie_id' => $id,
+            'seats' => $selectedSeatIds,
+            'attendees' => $attendees,
+            'customer_email' => $attendees[0]['email'] ?? '',
+            'customer_phone' => $attendees[0]['phone'] ?? '',
+            'total_price' => $totalPrice,
+            'booking_date' => now('Asia/Kolkata')->toDateTimeString(),
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Congratulations! Your group tickets have been booked.',
+            'seats' => $selectedSeatIds,
+            'total_price' => $totalPrice
+        ]);
     }
 
     public function logout(Request $request)

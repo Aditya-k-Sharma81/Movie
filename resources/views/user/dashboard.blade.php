@@ -113,7 +113,7 @@
 @endsection
 
 @section('footer')
-    <footer class="bg-slate-950 border-t border-slate-800 py-12 relative z-10">
+    <footer class="bg-slate-950 border-t border-slate-800 py-8 relative z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
                 <div class="col-span-1 md:col-span-2">
@@ -148,15 +148,12 @@
                     </ul>
                 </div>
             </div>
-            <div class="mt-12 pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="mt-4 pt-3 border-t border-slate-900 flex flex-col items-center gap-2">
                 <p class="text-slate-500 text-sm">© 2026 MovieTicket. All rights reserved.</p>
-                <div class="flex gap-6">
-                    <a href="#" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="instagram"
-                            class="w-5 h-5"></i></a>
-                    <a href="#" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="twitter"
-                            class="w-5 h-5"></i></a>
-                    <a href="#" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="facebook"
-                            class="w-5 h-5"></i></a>
+                <div class="flex gap-5">
+                    <a href="#" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="instagram" class="w-4 h-4"></i></a>
+                    <a href="#" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="twitter" class="w-4 h-4"></i></a>
+                    <a href="#" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="facebook" class="w-4 h-4"></i></a>
                 </div>
             </div>
         </div>
