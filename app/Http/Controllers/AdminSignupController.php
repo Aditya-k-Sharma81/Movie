@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdminSignupModel;
+use App\Models\Booking;
+use App\Models\Movie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -13,6 +15,53 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class AdminSignupController extends Controller
 {
+
+    public function dashboard()
+    {
+        $todayStart = now('Asia/Kolkata')->startOfDay()->toDateTimeString();
+        $todayEnd = now('Asia/Kolkata')->endOfDay()->toDateTimeString();
+
+        // All-time stats
+        $allBookings = Booking::all();
+        $totalRevenue = $allBookings->sum('total_price');
+        $totalTickets = $allBookings->sum(fn($b) => count($b->seats ?? []));
+        $totalMovies = Movie::count();
+        $totalBookings = $allBookings->count();
+
+        // Today's stats
+        $todayBookings = Booking::where('booking_date', '>=', $todayStart)
+            ->where('booking_date', '<=', $todayEnd)
+            ->get();
+        $todayRevenue = $todayBookings->sum('total_price');
+        $todayTickets = $todayBookings->sum(fn($b) => count($b->seats ?? []));
+
+        // Recent 5 bookings with movie info
+        $recentBookings = Booking::orderBy('booking_date', 'desc')->limit(5)->get()->map(function ($b) {
+            $b->movie = Movie::find($b->movie_id);
+            return $b;
+        });
+
+        // Top 5 movies by revenue
+        $topMovies = $allBookings->groupBy('movie_id')->map(function ($group, $movieId) {
+            $movie = Movie::find($movieId);
+            return [
+                'movie' => $movie,
+                'revenue' => $group->sum('total_price'),
+                'tickets' => $group->sum(fn($b) => count($b->seats ?? [])),
+            ];
+        })->sortByDesc('revenue')->take(5)->values();
+
+        return view('admin.dashboard', compact(
+            'totalRevenue',
+            'totalTickets',
+            'totalMovies',
+            'totalBookings',
+            'todayRevenue',
+            'todayTickets',
+            'recentBookings',
+            'topMovies'
+        ));
+    }
 
     public function login(Request $request)
     {
@@ -189,6 +238,73 @@ class AdminSignupController extends Controller
                 'message' => 'Error saving layout: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function adminBookings(Request $request)
+    {
+        $date = $request->input('date', now('Asia/Kolkata')->toDateString());
+
+        // MongoDB: booking_date stored as string "Y-m-d H:i:s" — use range filter
+        $start = $date . ' 00:00:00';
+        $end = $date . ' 23:59:59';
+
+        $bookings = Booking::where('booking_date', '>=', $start)
+            ->where('booking_date', '<=', $end)
+            ->get();
+
+        // Group by movie_id and get movie details
+        $moviesWithStats = [];
+        foreach ($bookings->groupBy('movie_id') as $movieId => $movieBookings) {
+            $movie = Movie::find($movieId);
+            if (!$movie)
+                continue;
+            $moviesWithStats[] = [
+                'movie' => $movie,
+                'total_bookings' => $movieBookings->count(),
+                'total_seats' => $movieBookings->sum(fn($b) => count($b->seats ?? [])),
+                'total_revenue' => $movieBookings->sum('total_price'),
+            ];
+        }
+
+        $totalRevenue = $bookings->sum('total_price');
+        $totalTickets = $bookings->sum(fn($b) => count($b->seats ?? []));
+
+        return view('admin.bookings.index', compact('moviesWithStats', 'totalRevenue', 'totalTickets', 'date'));
+    }
+
+    public function movieBookingDetails(Request $request, $movieId)
+    {
+        $date = $request->input('date', now('Asia/Kolkata')->toDateString());
+        $start = $date . ' 00:00:00';
+        $end = $date . ' 23:59:59';
+
+        $movie = Movie::find($movieId);
+
+        $bookings = Booking::where('movie_id', $movieId)
+            ->where('booking_date', '>=', $start)
+            ->where('booking_date', '<=', $end)
+            ->orderBy('booking_date', 'desc')
+            ->get();
+
+        $totalRevenue = $bookings->sum('total_price');
+        $totalSeats = $bookings->sum(fn($b) => count($b->seats ?? []));
+
+        return view('admin.bookings.details', compact('movie', 'bookings', 'totalRevenue', 'totalSeats', 'date'));
+    }
+
+    public function todayMovies()
+    {
+        $today = now('Asia/Kolkata')->toDateString();
+
+        $todayStart = $today . 'T00:00';
+        $todayEnd = $today . 'T23:59';
+
+        $todayMovies = Movie::where('start_time', '>=', $todayStart)
+            ->where('start_time', '<=', $todayEnd)
+            ->orderBy('start_time', 'asc')
+            ->get();
+
+        return view('admin.today-movies', compact('todayMovies', 'today'));
     }
 
     public function logout(Request $request)

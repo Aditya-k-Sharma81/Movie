@@ -1,241 +1,298 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-950">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Profile | MovieTicket</title>
-
-    <!-- CSRF -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <!-- jQuery -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <!-- SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <style>
-        body {
-            font-family: 'Outfit', sans-serif;
+        body { font-family: 'Outfit', sans-serif; }
+        .glass { background: rgba(15,23,42,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.07); }
+        .field {
+            background: rgba(15,23,42,0.9);
+            border: 1px solid #1e293b;
+            color: #f1f5f9;
+            transition: border-color .2s, box-shadow .2s;
         }
-
-        .glass {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .profile-gradient {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-        }
-
-        .form-input {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            transition: all 0.3s ease;
-        }
-
-        .form-input:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-            outline: none;
-        }
+        .field:focus { border-color: #e11d48; box-shadow: 0 0 0 3px rgba(225,29,72,.1); outline: none; }
+        .field::placeholder { color: #475569; }
+        select.field option { background: #0f172a; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
+<body class="min-h-screen bg-slate-950 text-slate-200">
 
-<body class="min-h-screen text-slate-200 p-4 md:p-8">
+<!-- Navbar -->
+<header class="glass border-b border-slate-800 sticky top-0 z-50 px-8 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+        <a href="{{ route('admin.dashboard') }}" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-400 hover:text-white transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        </a>
+        <span class="text-white font-black text-sm">My Profile</span>
+    </div>
+    <a href="{{ route('admin.logout') }}" class="text-slate-500 hover:text-rose-400 text-xs font-bold flex items-center gap-1.5 transition-colors">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Logout
+    </a>
+</header>
 
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-white">Admin Profile</h1>
-                <p class="text-slate-400">Manage your personal information and preferences</p>
-            </div>
-            <a href="/admin/dashboard" class="glass px-4 py-2 rounded-xl text-sm hover:bg-slate-800 transition-all">
-                <i class="fa-solid fa-arrow-left mr-2"></i> Back to Dashboard
-            </a>
+<!-- Page -->
+<div class="max-w-5xl mx-auto px-6 py-10 space-y-6">
+
+    <!-- Profile Header Card -->
+    <div class="glass border border-slate-800 rounded-3xl overflow-hidden">
+        <!-- Colored strip -->
+        <div class="h-24 bg-gradient-to-r from-rose-600/30 via-indigo-600/20 to-slate-900 relative">
+            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=40&w=1200&auto=format&fit=crop')] bg-cover bg-center opacity-10"></div>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Sidebar / Avatar Card -->
-            <div class="md:col-span-1 space-y-6">
-                <div class="glass rounded-3xl p-6 text-center">
-                    <div class="relative inline-block mb-4">
-                        <div class="w-32 h-32 rounded-full profile-gradient p-1">
-                            <img id="avatarImg" src="https://ui-avatars.com/api/?name={{ urlencode($admin->name ?? 'Admin') }}&background=0f172a&color=fff&size=128" 
-                                 alt="Avatar" class="w-full h-full rounded-full object-cover border-4 border-slate-900">
-                        </div>
-                    </div>
-                    <h2 id="display-name" class="text-xl font-bold text-white">{{ $admin->name ?? 'Admin User' }}</h2>
-                    <div class="flex justify-center gap-2">
-                        <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-xs border border-emerald-500/20">
-                            Active Account
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Theatre Pic Card -->
-                <div class="glass rounded-3xl p-6 overflow-hidden">
-                    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Theatre Picture</h3>
-                    <div class="aspect-video w-full rounded-xl bg-slate-800 border border-slate-700 overflow-hidden relative group">
+        <!-- Avatar + Info Row -->
+        <div class="px-8 pb-6 -mt-10 flex flex-col sm:flex-row sm:items-end gap-5">
+            <!-- Avatar -->
+            <div class="relative shrink-0">
+                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500 to-indigo-600 p-px shadow-xl">
+                    <div class="w-full h-full rounded-[calc(1rem-1px)] bg-slate-900 flex items-center justify-center overflow-hidden">
                         @if($admin->theatre_pic)
-                            <img id="theatrePreview" src="{{ asset($admin->theatre_pic) }}" class="w-full h-full object-cover">
+                            <img src="{{ $admin->theatre_pic }}" id="avatarPreview" class="w-full h-full object-cover">
                         @else
-                            <div id="theatrePlaceholder" class="w-full h-full flex flex-col items-center justify-center text-slate-600">
-                                <i class="fa-solid fa-clapperboard text-3xl mb-2"></i>
-                                <p class="text-xs">No Picture Set</p>
-                            </div>
-                            <img id="theatrePreview" src="" class="w-full h-full object-cover hidden">
+                            <span id="avatarInitial" class="text-3xl font-black text-white select-none">
+                                {{ strtoupper(substr($admin->name ?? 'A', 0, 1)) }}
+                            </span>
                         @endif
                     </div>
                 </div>
+                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-950"></div>
             </div>
 
-            <!-- Form Section -->
-            <div class="md:col-span-2 space-y-6">
-                <div class="glass rounded-3xl p-8">
-                    <h3 class="text-xl font-bold text-white mb-6">Edit Information</h3>
+            <!-- Name & Badges -->
+            <div class="flex-grow">
+                <h1 id="displayName" class="text-2xl font-black text-white mb-1">{{ $admin->name ?? 'Admin User' }}</h1>
+                <p class="text-slate-500 text-sm mb-3">{{ $admin->email ?? '' }}</p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[9px] font-black uppercase tracking-widest">
+                        ● Active Admin
+                    </span>
+                    @if($admin->theatre_name)
+                    <span class="px-2.5 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-full text-[9px] font-bold flex items-center gap-1">
+                        <i data-lucide="clapperboard" class="w-2.5 h-2.5"></i> {{ $admin->theatre_name }}
+                    </span>
+                    @endif
+                    @if($admin->theatre_type)
+                    <span class="px-2.5 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-full text-[9px] font-bold">
+                        {{ $admin->theatre_type }}
+                    </span>
+                    @endif
+                    @if($admin->capacity)
+                    <span class="px-2.5 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-full text-[9px] font-bold flex items-center gap-1">
+                        <i data-lucide="armchair" class="w-2.5 h-2.5"></i> {{ $admin->capacity }} seats
+                    </span>
+                    @endif
+                </div>
+            </div>
 
-                    <form id="profileForm" enctype="multipart/form-data" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div class="sm:col-span-2">
-                            <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Admin Name</label>
-                            <input type="text" name="name" value="{{ $admin->name ?? '' }}" 
-                                   class="form-input w-full px-4 py-3 rounded-xl" placeholder="Admin Full Name">
-                        </div>
-
-                        <div class="sm:col-span-2">
-                            <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Phone Number</label>
-                            <input type="text" name="phone" value="{{ $admin->phone ?? '' }}" 
-                                   class="form-input w-full px-4 py-3 rounded-xl" placeholder="+91 00000 00000">
-                        </div>
-                        
-                        <div class="sm:col-span-2">
-                            <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Email Address (Login ID)</label>
-                            <input type="email" value="{{ $admin->email ?? '' }}" readonly
-                                   class="form-input w-full px-4 py-3 rounded-xl opacity-50 cursor-not-allowed">
-                        </div>
-
-                        <div class="sm:col-span-1">
-                            <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Theatre Name</label>
-                            <input type="text" name="theatre_name" value="{{ $admin->theatre_name ?? '' }}" 
-                                   class="form-input w-full px-4 py-3 rounded-xl" placeholder="e.g. Galaxy Cinemas">
-                        </div>
-
-                        <div class="sm:col-span-1">
-                            <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Theatre Type</label>
-                            <select name="theatre_type" class="form-input w-full px-4 py-3 rounded-xl">
-                                <option value="" disabled {{ !isset($admin->theatre_type) ? 'selected' : '' }}>Select Type</option>
-                                <option value="Single Screen" {{ ($admin->theatre_type ?? '') == 'Single Screen' ? 'selected' : '' }}>Single Screen</option>
-                                <option value="Multiplex" {{ ($admin->theatre_type ?? '') == 'Multiplex' ? 'selected' : '' }}>Multiplex</option>
-                            </select>
-                        </div>
-
-                        <div class="sm:col-span-1">
-                            <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Seating Capacity</label>
-                            <input type="number" name="capacity" value="{{ $admin->capacity ?? '' }}" 
-                                   class="form-input w-full px-4 py-3 rounded-xl" placeholder="Total seats">
-                        </div>
-
-                        <div class="sm:col-span-2">
-                            <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Theatre Address</label>
-                            <textarea name="address" rows="3" class="form-input w-full px-4 py-3 rounded-xl" placeholder="Full address of the theatre...">{{ $admin->address ?? '' }}</textarea>
-                        </div>
-
-                        <div class="sm:col-span-2">
-                            <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Theatre Profile Picture</label>
-                            <input type="file" name="theatre_pic" id="theatre_pic_input"
-                                   class="form-input w-full px-4 py-3 rounded-xl file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
-                        </div>
-
-                        <div class="sm:col-span-2 pt-4">
-                            <button type="submit" id="saveBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-indigo-500/20">
-                                Save Profile Changes
-                            </button>
-                        </div>
-                    </form>
+            <!-- Quick Stats -->
+            <div class="flex gap-4 shrink-0">
+                <div class="text-center">
+                    <p class="text-[9px] text-slate-600 uppercase font-black tracking-widest">Type</p>
+                    <p class="text-sm font-black text-white mt-0.5">{{ $admin->theatre_type ?? '—' }}</p>
+                </div>
+                <div class="w-px bg-slate-800"></div>
+                <div class="text-center">
+                    <p class="text-[9px] text-slate-600 uppercase font-black tracking-widest">Capacity</p>
+                    <p class="text-sm font-black text-white mt-0.5">{{ $admin->capacity ?? '—' }}</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        $(document).ready(function() {
-            // CSRF setup
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    <!-- Two-column form -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- Left: Theatre Photo -->
+        <div class="space-y-5">
+            <div class="glass border border-slate-800 rounded-2xl overflow-hidden">
+                <div class="px-5 py-3.5 border-b border-slate-800 flex items-center gap-2">
+                    <i data-lucide="image" class="w-4 h-4 text-rose-500"></i>
+                    <h3 class="text-white font-black text-xs uppercase tracking-widest">Theatre Photo</h3>
+                </div>
+                <!-- Photo preview / upload zone -->
+                <div class="relative aspect-video cursor-pointer overflow-hidden group bg-slate-900"
+                     onclick="document.getElementById('theatre_pic_input').click()">
+                    @if($admin->theatre_pic)
+                        <img id="theatrePreview" src="{{ $admin->theatre_pic }}" class="w-full h-full object-cover">
+                    @else
+                        <img id="theatrePreview" src="" class="w-full h-full object-cover hidden">
+                        <div id="theatrePlaceholder" class="w-full h-full flex flex-col items-center justify-center text-slate-600 gap-2">
+                            <i data-lucide="image-plus" class="w-8 h-8"></i>
+                            <p class="text-xs font-bold">Upload Photo</p>
+                        </div>
+                    @endif
+                    <!-- Hover overlay -->
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center">
+                        <span class="opacity-0 group-hover:opacity-100 transition-all text-white text-xs font-black bg-rose-600 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i> Change
+                        </span>
+                    </div>
+                </div>
+                <div class="px-5 py-3 border-t border-slate-800">
+                    <p id="fileLabel" class="text-[10px] text-slate-600 truncate">No file chosen</p>
+                </div>
+            </div>
+
+            @if($admin->address)
+            <div class="glass border border-slate-800 rounded-2xl p-5">
+                <div class="flex items-center gap-2 mb-3">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-rose-500 shrink-0"></i>
+                    <h3 class="text-white font-black text-xs uppercase tracking-widest">Address</h3>
+                </div>
+                <p class="text-slate-400 text-sm leading-relaxed">{{ $admin->address }}</p>
+            </div>
+            @endif
+        </div>
+
+        <!-- Right: Edit Form -->
+        <div class="md:col-span-2">
+            <div class="glass border border-slate-800 rounded-2xl">
+                <div class="px-6 py-4 border-b border-slate-800 flex items-center gap-3">
+                    <i data-lucide="pencil-line" class="w-4 h-4 text-rose-500"></i>
+                    <h3 class="text-white font-black text-sm">Edit Information</h3>
+                </div>
+
+                <form id="profileForm" enctype="multipart/form-data" class="p-6 space-y-6">
+                    <input type="file" id="theatre_pic_input" name="theatre_pic" class="hidden" accept="image/*">
+
+                    <!-- Personal -->
+                    <div class="space-y-4">
+                        <p class="text-[9px] text-slate-600 uppercase font-black tracking-widest border-b border-slate-800 pb-2">Personal</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="col-span-2">
+                                <label class="block text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1.5">Full Name</label>
+                                <input type="text" name="name" value="{{ $admin->name ?? '' }}"
+                                    class="field w-full px-4 py-2.5 rounded-xl text-sm" placeholder="Full name">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1.5">Phone</label>
+                                <input type="text" name="phone" value="{{ $admin->phone ?? '' }}"
+                                    class="field w-full px-4 py-2.5 rounded-xl text-sm" placeholder="+91 00000 00000">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1.5">Email (read-only)</label>
+                                <input type="email" value="{{ $admin->email ?? '' }}" readonly
+                                    class="field w-full px-4 py-2.5 rounded-xl text-sm opacity-40 cursor-not-allowed">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theatre -->
+                    <div class="space-y-4">
+                        <p class="text-[9px] text-slate-600 uppercase font-black tracking-widest border-b border-slate-800 pb-2">Theatre Details</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1.5">Theatre Name</label>
+                                <input type="text" name="theatre_name" value="{{ $admin->theatre_name ?? '' }}"
+                                    class="field w-full px-4 py-2.5 rounded-xl text-sm" placeholder="e.g. Galaxy Cinemas">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1.5">Theatre Type</label>
+                                <select name="theatre_type" class="field w-full px-4 py-2.5 rounded-xl text-sm">
+                                    <option value="" disabled {{ !($admin->theatre_type ?? null) ? 'selected' : '' }}>Select type</option>
+                                    <option value="Single Screen" {{ ($admin->theatre_type ?? '') == 'Single Screen' ? 'selected' : '' }}>Single Screen</option>
+                                    <option value="Multiplex"     {{ ($admin->theatre_type ?? '') == 'Multiplex'     ? 'selected' : '' }}>Multiplex</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1.5">Seating Capacity</label>
+                                <input type="number" name="capacity" value="{{ $admin->capacity ?? '' }}"
+                                    class="field w-full px-4 py-2.5 rounded-xl text-sm" placeholder="Total seats">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1.5">Theatre Photo</label>
+                                <button type="button" onclick="document.getElementById('theatre_pic_input').click()"
+                                    class="field w-full px-4 py-2.5 rounded-xl text-sm text-slate-500 hover:text-white hover:border-rose-500 transition-all flex items-center gap-2">
+                                    <i data-lucide="upload" class="w-3.5 h-3.5 shrink-0"></i>
+                                    <span class="truncate" id="uploadBtnLabel">Choose image...</span>
+                                </button>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1.5">Address</label>
+                                <textarea name="address" rows="3"
+                                    class="field w-full px-4 py-2.5 rounded-xl text-sm resize-none"
+                                    placeholder="Full address of the theatre...">{{ $admin->address ?? '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" id="saveBtn"
+                        class="w-full py-3 bg-rose-600 hover:bg-rose-700 active:scale-[.98] text-white font-black rounded-2xl transition-all shadow-lg shadow-rose-900/20 flex items-center justify-center gap-2 text-sm">
+                        <i data-lucide="save" class="w-4 h-4"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+    $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
+
+    // File pick → preview + label
+    $('#theatre_pic_input').on('change', function () {
+        const file = this.files[0];
+        if (!file) return;
+        $('#fileLabel, #uploadBtnLabel').text(file.name);
+        const r = new FileReader();
+        r.onload = e => {
+            $('#theatrePlaceholder').addClass('hidden');
+            $('#theatrePreview').attr('src', e.target.result).removeClass('hidden');
+            $('#avatarPreview').length && $('#avatarPreview').attr('src', e.target.result);
+        };
+        r.readAsDataURL(file);
+    });
+
+    // Submit
+    $('#profileForm').on('submit', function (e) {
+        e.preventDefault();
+        const fd = new FormData(this);
+
+        $('#saveBtn').prop('disabled', true).html(
+            '<svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Saving...'
+        );
+
+        $.ajax({
+            url: "{{ route('admin.profile.update') }}",
+            type: 'POST', data: fd, processData: false, contentType: false,
+            success: res => {
+                if (res.status) {
+                    Swal.fire({ icon: 'success', title: 'Saved!', text: res.message,
+                        background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#e11d48',
+                        timer: 2000, showConfirmButton: false
+                    }).then(() => {
+                        const n = $('input[name="name"]').val();
+                        $('#displayName').text(n);
+                        $('#avatarInitial').text(n.charAt(0).toUpperCase());
+                    });
                 }
-            });
-
-            // Preview Theatre Pic
-            $('#theatre_pic_input').change(function() {
-                const file = this.files[0];
-                if (file) {
-                    let reader = new FileReader();
-                    reader.onload = function(event) {
-                        $('#theatrePlaceholder').addClass('hidden');
-                        $('#theatrePreview').attr('src', event.target.result).removeClass('hidden');
-                    }
-                    reader.readAsDataURL(file);
-                }
-            });
-
-            $('#profileForm').on('submit', function(e) {
-                e.preventDefault();
-                
-                let formData = new FormData(this);
-
-                // Show loading
-                $('#saveBtn').prop('disabled', true).html('<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Saving...');
-
-                $.ajax({
-                    url: "{{ route('admin.profile.update') }}",
-                    type: "POST",
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(res) {
-                        if (res.status) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Success!',
-                                text: res.message,
-                                background: '#0f172a',
-                                color: '#fff'
-                            }).then(() => {
-                                // Update dynamic elements
-                                $('#display-name').text($('input[name="name"]').val());
-                                $('#avatarImg').attr('src', 'https://ui-avatars.com/api/?name=' + encodeURIComponent($('input[name="name"]').val()) + '&background=0f172a&color=fff&size=128');
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        let msg = xhr.responseJSON?.message || 'Something went wrong';
-                        if (xhr.responseJSON?.errors) {
-                            msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
-                        }
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            html: msg,
-                            background: '#0f172a',
-                            color: '#fff'
-                        });
-                    },
-                    complete: function() {
-                        $('#saveBtn').prop('disabled', false).text('Save Profile Changes');
-                    }
-                });
-            });
+            },
+            error: xhr => {
+                let msg = xhr.responseJSON?.message || 'Something went wrong.';
+                if (xhr.responseJSON?.errors) msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                Swal.fire({ icon: 'error', title: 'Error', html: msg,
+                    background: '#0f172a', color: '#f8fafc', confirmButtonColor: '#e11d48' });
+            },
+            complete: () => {
+                $('#saveBtn').prop('disabled', false).html(
+                    '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Changes'
+                );
+            }
         });
-    </script>
-
+    });
+</script>
 </body>
-
 </html>

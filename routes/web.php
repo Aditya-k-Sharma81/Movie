@@ -45,9 +45,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Protected Admin Routes
     Route::middleware(['admin.auth'])->group(function () {
         // Dashboard Page
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [AdminSignupController::class, 'dashboard'])->name('dashboard');
 
         // Profile Page
         Route::get('/profile', function () {
@@ -67,6 +65,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/update/{id}', [\App\Http\Controllers\MovieController::class, 'update'])->name('update');
             Route::delete('/delete/{id}', [\App\Http\Controllers\MovieController::class, 'destroy'])->name('delete');
         });
+
+        // Bookings Management
+        Route::get('/bookings', [AdminSignupController::class, 'adminBookings'])->name('bookings');
+        Route::get('/bookings/movie/{movieId}', [AdminSignupController::class, 'movieBookingDetails'])->name('bookings.movie');
+
+        // Today's Movies
+        Route::get('/today-movies', [AdminSignupController::class, 'todayMovies'])->name('today.movies');
 
         // Screens / Seating Layout Builder
         Route::get('/screens/seating', [AdminSignupController::class, 'showSeatingLayout'])->name('screens.seating');
