@@ -66,26 +66,21 @@
 
             </form>
 
-            <div class="mt-6 text-center">
-                <p class="text-slate-400 text-sm">
-                    Don't have an account?
-                    <a href="/admin/signup" class="text-indigo-400 font-semibold">Create one</a>
-                </p>
-            </div>
+            <!-- Signup Removed -->
         </div>
     </div>
 
     <!-- Session Error Alert -->
     @if(session('error'))
-    <script>
-        Swal.fire({
-            icon: 'error',
-            title: 'Access Denied',
-            text: "{{ session('error') }}",
-            background: '#0f172a',
-            color: '#fff'
-        });
-    </script>
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Access Denied',
+                text: "{{ session('error') }}",
+                background: '#0f172a',
+                color: '#fff'
+            });
+        </script>
     @endif
 
 </body>
