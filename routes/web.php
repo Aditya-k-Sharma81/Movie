@@ -31,6 +31,13 @@ Route::middleware(['user.auth'])->group(function () {
     Route::post('/movie/{id}/payment/init', [UserAuthController::class, 'initiatePayment'])->name('movie.payment.init');
     Route::post('/movie/{id}/book', [UserAuthController::class, 'bookTickets'])->name('movie.book');
     Route::delete('/booking/{id}/cancel', [UserAuthController::class, 'cancelBooking'])->name('booking.cancel');
+    
+    // Event Routes
+    Route::get('/events', [UserAuthController::class, 'events'])->name('events');
+    Route::get('/event/{id}', [UserAuthController::class, 'eventDetails'])->name('event.details');
+    Route::get('/event/{id}/seats', [UserAuthController::class, 'fetchEventSeats'])->name('event.seats');
+    Route::post('/event/{id}/payment/init', [UserAuthController::class, 'initiateEventPayment'])->name('event.payment.init');
+    Route::post('/event/{id}/book', [UserAuthController::class, 'bookEventTickets'])->name('event.book');
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -67,16 +74,32 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/delete/{id}', [\App\Http\Controllers\MovieController::class, 'destroy'])->name('delete');
         });
 
+        // Event Management
+        Route::prefix('events')->name('events.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\EventController::class, 'index'])->name('index');
+            Route::get('/add', [\App\Http\Controllers\EventController::class, 'create'])->name('add');
+            Route::post('/store', [\App\Http\Controllers\EventController::class, 'store'])->name('store');
+            Route::get('/edit/{id}', [\App\Http\Controllers\EventController::class, 'edit'])->name('edit');
+            Route::post('/update/{id}', [\App\Http\Controllers\EventController::class, 'update'])->name('update');
+            Route::delete('/delete/{id}', [\App\Http\Controllers\EventController::class, 'destroy'])->name('delete');
+        });
+
         // Bookings Management
         Route::get('/bookings', [AdminSignupController::class, 'adminBookings'])->name('bookings');
         Route::get('/bookings/movie/{movieId}', [AdminSignupController::class, 'movieBookingDetails'])->name('bookings.movie');
+        Route::get('/bookings/event/{eventId}', [AdminSignupController::class, 'eventBookingDetails'])->name('bookings.event');
 
         // Today's Movies
         Route::get('/today-movies', [AdminSignupController::class, 'todayMovies'])->name('today.movies');
+        Route::get('/today-events', [AdminSignupController::class, 'todayEvents'])->name('today.events');
 
         // Screens / Seating Layout Builder
         Route::get('/screens/seating', [AdminSignupController::class, 'showSeatingLayout'])->name('screens.seating');
         Route::post('/screens/seating/save', [AdminSignupController::class, 'saveSeatingLayout'])->name('screens.seating.save');
+
+        // Event Seating Layout Builder
+        Route::get('/screens/event-seating', [AdminSignupController::class, 'showEventSeatingLayout'])->name('screens.event_seating');
+        Route::post('/screens/event-seating/save', [AdminSignupController::class, 'saveEventSeatingLayout'])->name('screens.event_seating.save');
 
 
         // Logout

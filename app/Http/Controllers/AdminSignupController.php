@@ -25,6 +25,7 @@ class AdminSignupController extends Controller
         $totalRevenue = Booking::sum('total_price') ?? 0;
         $totalTickets = Booking::sum('ticket_count') ?? 0;
         $totalMovies = Movie::count();
+        $totalEvents = \App\Models\Event::count();
         $totalBookings = Booking::count();
 
         // Today's stats
@@ -33,8 +34,8 @@ class AdminSignupController extends Controller
         $todayRevenue = $todayBookingsQuery->sum('total_price') ?? 0;
         $todayTickets = $todayBookingsQuery->sum('ticket_count') ?? 0;
 
-        // Recent 5 bookings with movie info
-        $recentBookings = Booking::with('movie')
+        // Recent 5 bookings with movie and event info
+        $recentBookings = Booking::with(['movie', 'event'])
             ->orderBy('booking_date', 'desc')
             ->limit(5)
             ->get();
@@ -42,6 +43,7 @@ class AdminSignupController extends Controller
         // Top 5 movies by revenue
         $topMoviesAgg = Booking::raw(function($collection) {
             return $collection->aggregate([
+                ['$match' => ['movie_id' => ['$ne' => null]]],
                 ['$group' => [
                     '_id' => '$movie_id',
                     'revenue' => ['$sum' => '$total_price'],
@@ -61,17 +63,48 @@ class AdminSignupController extends Controller
                 'revenue' => $revenue,
                 'tickets' => $tickets,
             ];
+        })->filter(function($item) {
+            return !empty($item['movie']);
+        });
+
+        // Top 5 events by revenue
+        $topEventsAgg = Booking::raw(function($collection) {
+            return $collection->aggregate([
+                ['$match' => ['event_id' => ['$ne' => null]]],
+                ['$group' => [
+                    '_id' => '$event_id',
+                    'revenue' => ['$sum' => '$total_price'],
+                    'tickets' => ['$sum' => '$ticket_count']
+                ]],
+                ['$sort' => ['revenue' => -1]],
+                ['$limit' => 5]
+            ]);
+        });
+
+        $topEvents = collect($topEventsAgg)->map(function ($group) {
+            $groupId = is_object($group) ? $group->_id : $group['_id'];
+            $revenue = is_object($group) ? $group->revenue : $group['revenue'];
+            $tickets = is_object($group) ? $group->tickets : $group['tickets'];
+            return [
+                'event' => \App\Models\Event::find($groupId),
+                'revenue' => $revenue,
+                'tickets' => $tickets,
+            ];
+        })->filter(function($item) {
+            return !empty($item['event']);
         });
 
         return view('admin.dashboard', compact(
             'totalRevenue',
             'totalTickets',
             'totalMovies',
+            'totalEvents',
             'totalBookings',
             'todayRevenue',
             'todayTickets',
             'recentBookings',
-            'topMovies'
+            'topMovies',
+            'topEvents'
         ));
     }
 
@@ -252,6 +285,52 @@ class AdminSignupController extends Controller
         }
     }
 
+    public function showEventSeatingLayout()
+    {
+        $adminId = session('admin_id');
+        $admin = AdminSignupModel::find($adminId);
+        return view('admin.screens.event_seating', compact('admin'));
+    }
+
+    public function saveEventSeatingLayout(Request $request)
+    {
+        $adminId = session('admin_id');
+        if (!$adminId) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'layout_data' => 'required|array'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $admin = AdminSignupModel::where('_id', $adminId)->first();
+            if (!$admin) {
+                return response()->json(['status' => false, 'message' => 'Admin not found'], 404);
+            }
+
+            // Save the layout JSON to the model
+            $admin->update([
+                'event_seating_layout' => $request->layout_data
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Event seating layout saved successfully!'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error saving event layout: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function adminBookings(Request $request)
     {
         $date = $request->input('date', now('Asia/Kolkata')->toDateString());
@@ -260,14 +339,14 @@ class AdminSignupController extends Controller
         $start = $date . ' 00:00:00';
         $end = $date . ' 23:59:59';
 
-        $bookings = Booking::with('movie')
+        $bookings = Booking::with(['movie', 'event'])
             ->where('booking_date', '>=', $start)
             ->where('booking_date', '<=', $end)
             ->get();
 
         // Group by movie_id and get movie details
         $moviesWithStats = [];
-        foreach ($bookings->groupBy('movie_id') as $movieId => $movieBookings) {
+        foreach ($bookings->whereNotNull('movie_id')->groupBy('movie_id') as $movieId => $movieBookings) {
             $movie = $movieBookings->first()->movie;
             if (!$movie)
                 continue;
@@ -279,10 +358,24 @@ class AdminSignupController extends Controller
             ];
         }
 
+        // Group by event_id and get event details
+        $eventsWithStats = [];
+        foreach ($bookings->whereNotNull('event_id')->groupBy('event_id') as $eventId => $eventBookings) {
+            $event = $eventBookings->first()->event;
+            if (!$event)
+                continue;
+            $eventsWithStats[] = [
+                'event' => $event,
+                'total_bookings' => $eventBookings->count(),
+                'total_seats' => $eventBookings->sum('ticket_count'),
+                'total_revenue' => $eventBookings->sum('total_price'),
+            ];
+        }
+
         $totalRevenue = $bookings->sum('total_price');
         $totalTickets = $bookings->sum('ticket_count');
 
-        return view('admin.bookings.index', compact('moviesWithStats', 'totalRevenue', 'totalTickets', 'date'));
+        return view('admin.bookings.index', compact('moviesWithStats', 'eventsWithStats', 'totalRevenue', 'totalTickets', 'date'));
     }
 
     public function movieBookingDetails(Request $request, $movieId)
@@ -299,6 +392,20 @@ class AdminSignupController extends Controller
         return view('admin.bookings.details', compact('movie', 'bookings', 'totalRevenue', 'totalSeats'));
     }
 
+    public function eventBookingDetails(Request $request, $eventId)
+    {
+        $event = \App\Models\Event::find($eventId);
+
+        $bookings = Booking::where('event_id', $eventId)
+            ->orderBy('booking_date', 'desc')
+            ->get();
+
+        $totalRevenue = $bookings->sum('total_price');
+        $totalSeats = $bookings->sum('ticket_count');
+
+        return view('admin.bookings.event_details', compact('event', 'bookings', 'totalRevenue', 'totalSeats'));
+    }
+
     public function todayMovies(Request $request)
     {
         $today = $request->input('date', now('Asia/Kolkata')->toDateString());
@@ -312,6 +419,17 @@ class AdminSignupController extends Controller
             ->get();
 
         return view('admin.today-movies', compact('todayMovies', 'today'));
+    }
+
+    public function todayEvents(Request $request)
+    {
+        $today = $request->input('date', now('Asia/Kolkata')->toDateString());
+
+        $todayEvents = \App\Models\Event::where('event_date', $today)
+            ->orderBy('start_time', 'asc')
+            ->get();
+
+        return view('admin.today-events', compact('todayEvents', 'today'));
     }
 
     public function logout(Request $request)

@@ -20,5 +20,6 @@ class AdminSignupModel extends Authenticatable
         'address',
         'theatre_type',
         'seating_layout',
+        'event_seating_layout',
     ];
 }

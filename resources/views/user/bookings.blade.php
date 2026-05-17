@@ -19,17 +19,23 @@
             </div>
             <h2 class="text-2xl font-bold text-white mb-2">No Bookings Yet</h2>
             <p class="text-slate-500 max-w-xs mx-auto mb-8">You haven't booked any tickets yet. Start exploring!</p>
-            <a href="{{ route('movies') }}" class="inline-flex items-center gap-2 px-8 py-4 bg-rose-600 text-white font-bold rounded-2xl hover:bg-rose-700 transition-all active:scale-95">
-                Explore Movies <i data-lucide="arrow-right" class="w-5 h-5"></i>
-            </a>
+            <div class="flex justify-center gap-4">
+                <a href="{{ route('movies') }}" class="inline-flex items-center gap-2 px-6 py-3.5 bg-rose-600 text-white font-bold rounded-2xl hover:bg-rose-700 transition-all active:scale-95">
+                    Explore Movies <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+                <a href="{{ route('events') }}" class="inline-flex items-center gap-2 px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl transition-all border border-slate-700 active:scale-95">
+                    Explore Events <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
         </div>
     @else
         <div class="space-y-6">
             @foreach($bookings as $booking)
             @php
-                $movie = $booking->movie;
+                $item = $booking->movie ?? $booking->event;
+                $isEvent = (bool)$booking->event_id;
                 $bookingDate = \Carbon\Carbon::parse($booking->booking_date)->timezone('Asia/Kolkata');
-                $showTime = $movie ? \Carbon\Carbon::parse($movie->start_time)->timezone('Asia/Kolkata') : null;
+                $showTime = $item ? \Carbon\Carbon::parse($item->start_time)->timezone('Asia/Kolkata') : null;
                 $isUpcoming = $showTime && $showTime->isFuture();
                 $canCancel = $showTime && now()->timezone('Asia/Kolkata')->addHours(2)->lessThan($showTime);
             @endphp
@@ -39,13 +45,13 @@
                 <!-- Booking Card Header -->
                 <div class="flex flex-col md:flex-row gap-0">
                     
-                    <!-- Movie Poster -->
+                    <!-- Poster -->
                     <div class="w-full md:w-28 h-36 md:h-auto shrink-0">
-                        @if($movie && $movie->poster)
-                            <img src="{{ $movie->poster }}" alt="{{ $movie->title }}" class="w-full h-full object-cover">
+                        @if($item && $item->poster)
+                            <img src="{{ $item->poster }}" alt="{{ $item->title }}" class="w-full h-full object-cover">
                         @else
                             <div class="w-full h-full bg-slate-800 flex items-center justify-center">
-                                <i data-lucide="film" class="w-8 h-8 text-slate-600"></i>
+                                <i data-lucide="{{ $isEvent ? 'calendar' : 'film' }}" class="w-8 h-8 text-slate-600"></i>
                             </div>
                         @endif
                     </div>
@@ -54,35 +60,42 @@
                     <div class="flex-grow p-6">
                         <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                             <div>
-                                <!-- Movie Title & Status -->
-                                <div class="flex items-center gap-3 mb-2">
-                                    <h2 class="text-xl font-black text-white">{{ $movie ? $movie->title : 'Movie Unavailable' }}</h2>
+                                <!-- Title & Status -->
+                                <div class="flex flex-wrap items-center gap-3 mb-2">
+                                    <h2 class="text-xl font-black text-white">{{ $item ? $item->title : 'Unavailable' }}</h2>
+                                    <span class="px-2.5 py-0.5 text-[9px] font-black uppercase rounded-full tracking-widest {{ $isEvent ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20' }}">
+                                        {{ $isEvent ? 'Event' : 'Movie' }}
+                                    </span>
                                     <span class="px-2.5 py-0.5 text-[9px] font-black uppercase rounded-full tracking-widest {{ $isUpcoming ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-500 border border-slate-700' }}">
                                         {{ $isUpcoming ? 'Upcoming' : 'Completed' }}
                                     </span>
                                 </div>
 
-                                <!-- Theatre & Location -->
-                                <div class="flex items-center gap-1.5 text-xs text-indigo-400 font-bold mb-4">
+                                <!-- Venue & Location -->
+                                <div class="flex items-center gap-1.5 text-xs text-indigo-400 font-bold mb-4 font-sans">
                                     <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                                    {{ $theatreDetails['theatre_name'] ?? 'MovieTicket Cinemas' }}
-                                    <span class="text-slate-500 font-medium ml-1">• {{ $theatreDetails['location'] ?? 'City Center' }}</span>
+                                    @if($isEvent)
+                                        {{ $item->venue ?? 'Event Venue' }}
+                                    @else
+                                        {{ $theatreDetails['theatre_name'] ?? 'MovieTicket Cinemas' }}
+                                        <span class="text-slate-500 font-medium ml-1">• {{ $theatreDetails['location'] ?? 'City Center' }}</span>
+                                    @endif
                                 </div>
 
                                 <!-- Show Date & Time -->
                                 @if($showTime)
                                 <div class="flex flex-wrap items-center gap-4 text-sm text-slate-400 mb-4">
-                                    <span class="flex items-center gap-1.5">
+                                    <span class="flex items-center gap-1.5 font-sans">
                                         <i data-lucide="calendar" class="w-3.5 h-3.5 text-rose-500"></i>
                                         {{ $showTime->format('d M Y') }}
                                     </span>
-                                    <span class="flex items-center gap-1.5">
+                                    <span class="flex items-center gap-1.5 font-sans">
                                         <i data-lucide="clock" class="w-3.5 h-3.5 text-rose-500"></i>
                                         {{ $showTime->format('h:i A') }}
                                     </span>
-                                    <span class="flex items-center gap-1.5">
+                                    <span class="flex items-center gap-1.5 font-sans">
                                         <i data-lucide="timer" class="w-3.5 h-3.5 text-rose-500"></i>
-                                        {{ $movie->duration ?? 'N/A' }} min
+                                        {{ $item->duration ?? 'N/A' }} min
                                     </span>
                                 </div>
                                 @endif
@@ -99,7 +112,7 @@
                             <!-- Price & Booking Date -->
                             <div class="text-right shrink-0">
                                 <p class="text-2xl font-black text-white">₹{{ number_format($booking->total_price) }}</p>
-                                <p class="text-[10px] text-slate-500 uppercase font-bold mt-1">Booked {{ $bookingDate->format('d M, h:i A') }}</p>
+                                <p class="text-[10px] text-slate-500 uppercase font-bold mt-1 font-sans">Booked {{ $bookingDate->format('d M, h:i A') }}</p>
                                 @if($canCancel)
                                 <button onclick="cancelBooking('{{ $booking->_id }}')"
                                     class="mt-3 px-4 py-2 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white border border-red-600/30 hover:border-red-600 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-1.5 ml-auto">
@@ -107,7 +120,7 @@
                                     Cancel Ticket
                                 </button>
                                 @elseif($isUpcoming)
-                                <p class="mt-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest text-right" title="Cancellations are only allowed up to 2 hours before the show.">
+                                <p class="mt-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest text-right font-sans" title="Cancellations are only allowed up to 2 hours before the start time.">
                                     <i data-lucide="clock" class="w-3 h-3 inline-block -mt-0.5 mr-0.5"></i> Cancellation Closed
                                 </p>
                                 @endif
@@ -134,11 +147,11 @@
                                 <i data-lucide="user" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i>
                                 {{ $attendee['name'] ?? 'N/A' }}
                             </div>
-                            <div class="flex items-center gap-2 text-xs text-slate-400">
+                            <div class="flex items-center gap-2 text-xs text-slate-400 font-sans">
                                 <i data-lucide="mail" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
                                 {{ $attendee['email'] ?? 'N/A' }}
                             </div>
-                            <div class="flex items-center gap-2 text-xs text-slate-400">
+                            <div class="flex items-center gap-2 text-xs text-slate-400 font-sans">
                                 <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
                                 {{ $attendee['phone'] ?? 'N/A' }}
                             </div>

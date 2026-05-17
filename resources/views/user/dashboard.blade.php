@@ -49,8 +49,33 @@
         </div>
 
         <!-- Real-Time Movie Grid Container -->
-        <div id="movieGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div id="movieGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
             @include('user.partials.movie_grid', ['movies' => $movies, 'showTime' => false])
+        </div>
+
+        <!-- Featured Section Header for Events -->
+        <div class="flex justify-between items-end mb-8 mt-12">
+            <div>
+                <h2 class="text-3xl font-black text-white">Featured Live Events</h2>
+                <p class="text-slate-500">Exciting music concerts, comedy, shows and more.</p>
+            </div>
+            <a href="{{ route('events') }}"
+                class="text-rose-500 font-bold hover:text-rose-400 transition-colors flex items-center gap-2">
+                View All <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </a>
+        </div>
+
+        <!-- Real-Time Event Grid Container -->
+        <div id="eventGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            @forelse($events as $event)
+                @include('user.partials.event_grid', ['events' => [$event], 'showTime' => false])
+            @empty
+                <div class="col-span-full py-12 flex flex-col items-center justify-center text-center">
+                    <i data-lucide="calendar" class="w-12 h-12 text-slate-600 mb-3"></i>
+                    <h3 class="text-white font-bold text-lg">No Live Events scheduled yet</h3>
+                    <p class="text-slate-500 text-sm">Stay tuned! Exciting events are coming soon.</p>
+                </div>
+            @endforelse
         </div>
     </div>
 @endsection
@@ -82,9 +107,9 @@
 
             /**
              * Immediate Removal Logic (Check every second)
-             * Removes movie cards from UI the moment start_time is passed
+             * Removes movie/event cards from UI the moment start_time is passed
              */
-            function monitorMovieTimes() {
+            function monitorTimes() {
                 const now = new Date();
                 $('.movie-card').each(function () {
                     const startTimeStr = $(this).data('start-time');
@@ -93,10 +118,21 @@
                         if (startTime <= now) {
                             $(this).fadeOut(500, function () {
                                 $(this).remove();
-                                // If grid becomes empty, we might want to refresh to show empty state
                                 if ($('.movie-card').length === 0) {
                                     refreshMovies();
                                 }
+                            });
+                        }
+                    }
+                });
+
+                $('.event-card').each(function () {
+                    const startTimeStr = $(this).data('start-time');
+                    if (startTimeStr) {
+                        const startTime = new Date(startTimeStr);
+                        if (startTime <= now) {
+                            $(this).fadeOut(500, function () {
+                                $(this).remove();
                             });
                         }
                     }
@@ -107,7 +143,7 @@
             setInterval(refreshMovies, 30000);
 
             // Precise removal every 1 second
-            setInterval(monitorMovieTimes, 1000);
+            setInterval(monitorTimes, 1000);
         });
     </script>
 @endsection

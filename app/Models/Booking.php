@@ -12,6 +12,7 @@ class Booking extends Model
     protected $fillable = [
         'user_id',
         'movie_id',
+        'event_id',
         'seats',         // Array of seat IDs (e.g., ["A-1", "A-2"])
         'ticket_count',
         'attendees',     // Array of names (e.g., ["John", "Jane"])
@@ -26,6 +27,11 @@ class Booking extends Model
     public function movie()
     {
         return $this->belongsTo(Movie::class, 'movie_id');
+    }
+
+    public function event()
+    {
+        return $this->belongsTo(Event::class, 'event_id');
     }
 
     public function user()

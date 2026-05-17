@@ -56,6 +56,14 @@
                     class="flex items-center px-3 py-2.5 rounded-xl transition-all text-sm {{ $currentRoute == 'admin.movies.add' ? 'text-white bg-indigo-600/10 border-l-2 border-indigo-500 rounded-l-none font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
                     <i data-lucide="plus-circle" class="w-4 h-4 mr-3 {{ $currentRoute == 'admin.movies.add' ? 'text-indigo-400' : 'text-indigo-400' }}"></i> Add Movie
                 </a>
+                <a href="{{ route('admin.events.index') }}"
+                    class="flex items-center px-3 py-2.5 rounded-xl transition-all text-sm {{ str_starts_with($currentRoute, 'admin.events') && $currentRoute != 'admin.events.add' ? 'text-white bg-rose-600/10 border-l-2 border-rose-500 rounded-l-none font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                    <i data-lucide="calendar" class="w-4 h-4 mr-3 {{ str_starts_with($currentRoute, 'admin.events') && $currentRoute != 'admin.events.add' ? 'text-rose-400' : '' }}"></i> All Events
+                </a>
+                <a href="{{ route('admin.events.add') }}"
+                    class="flex items-center px-3 py-2.5 rounded-xl transition-all text-sm {{ $currentRoute == 'admin.events.add' ? 'text-white bg-indigo-600/10 border-l-2 border-indigo-500 rounded-l-none font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                    <i data-lucide="plus-square" class="w-4 h-4 mr-3 {{ $currentRoute == 'admin.events.add' ? 'text-indigo-400' : 'text-indigo-400' }}"></i> Add Event
+                </a>
                 <a href="{{ route('admin.bookings') }}"
                     class="flex items-center px-3 py-2.5 rounded-xl transition-all text-sm {{ str_starts_with($currentRoute, 'admin.bookings') ? 'text-white bg-rose-600/10 border-l-2 border-rose-500 rounded-l-none font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
                     <i data-lucide="ticket" class="w-4 h-4 mr-3 {{ str_starts_with($currentRoute, 'admin.bookings') ? 'text-rose-400' : 'text-rose-400' }}"></i> Bookings
@@ -66,9 +74,19 @@
                     <span>Today's Movies</span>
                     <span class="ml-auto text-[9px] font-black px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded-md border border-amber-500/20">TODAY</span>
                 </a>
+                <a href="{{ route('admin.today.events') }}"
+                    class="flex items-center px-3 py-2.5 rounded-xl transition-all text-sm group {{ $currentRoute == 'admin.today.events' ? 'text-white bg-purple-500/20 border-l-2 border-purple-500 rounded-l-none font-bold' : 'text-slate-400 hover:text-white hover:bg-purple-500/10' }}">
+                    <i data-lucide="calendar" class="w-4 h-4 mr-3 {{ $currentRoute == 'admin.today.events' ? 'text-purple-400' : 'text-purple-400 group-hover:text-purple-300' }}"></i>
+                    <span>Today's Events</span>
+                    <span class="ml-auto text-[9px] font-black px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded-md border border-purple-500/20">LIVE</span>
+                </a>
                 <a href="{{ route('admin.screens.seating') }}"
                     class="flex items-center px-3 py-2.5 rounded-xl transition-all text-sm {{ $currentRoute == 'admin.screens.seating' ? 'text-white bg-blue-600/10 border-l-2 border-blue-500 rounded-l-none font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <i data-lucide="armchair" class="w-4 h-4 mr-3 {{ $currentRoute == 'admin.screens.seating' ? 'text-blue-400' : 'text-blue-400' }}"></i> Seating Map
+                    <i data-lucide="film" class="w-4 h-4 mr-3 {{ $currentRoute == 'admin.screens.seating' ? 'text-blue-400' : 'text-blue-400' }}"></i> Movie Seating
+                </a>
+                <a href="{{ route('admin.screens.event_seating') }}"
+                    class="flex items-center px-3 py-2.5 rounded-xl transition-all text-sm {{ $currentRoute == 'admin.screens.event_seating' ? 'text-white bg-purple-600/10 border-l-2 border-purple-500 rounded-l-none font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                    <i data-lucide="armchair" class="w-4 h-4 mr-3 {{ $currentRoute == 'admin.screens.event_seating' ? 'text-purple-400' : 'text-purple-400' }}"></i> Event Seating
                 </a>
                 <a href="{{ route('admin.profile') }}"
                     class="flex items-center px-3 py-2.5 rounded-xl transition-all text-sm {{ $currentRoute == 'admin.profile' ? 'text-white bg-emerald-600/10 border-l-2 border-emerald-500 rounded-l-none font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">

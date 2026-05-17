@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Movie;
+use App\Models\Event;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +17,8 @@ class UserAuthController extends Controller
     public function index()
     {
         $movies = $this->movieQuery();
-        return view('user.dashboard', compact('movies'));
+        $events = $this->eventQuery();
+        return view('user.dashboard', compact('movies', 'events'));
     }
 
     public function fetchMovies(Request $request)
@@ -67,6 +69,47 @@ class UserAuthController extends Controller
         ];
 
         return view('user.movie_details', compact('movie', 'theatreDetails'));
+    }
+
+    private function eventQuery(Request $request = null)
+    {
+        $now = now('Asia/Kolkata');
+        $query = Event::query();
+
+        if ($request) {
+            if ($request->filled('search')) {
+                $query->where('title', 'LIKE', '%' . $request->search . '%');
+            }
+            if ($request->filled('category')) {
+                $query->where('category', $request->category);
+            }
+        }
+        $query->where('start_time', '>=', $now->format('Y-m-d\TH:i'));
+        return $query->orderBy('start_time', 'asc')->get();
+    }
+
+    public function events(Request $request)
+    {
+        $events = $this->eventQuery($request);
+        $categoriesRaw = Event::raw(function($collection) {
+            return $collection->distinct('category');
+        });
+        $categories = collect($categoriesRaw)->filter()->values();
+        return view('user.events', compact('events', 'categories'));
+    }
+
+    public function eventDetails($id)
+    {
+        $event = Event::find($id);
+        if (!$event) {
+            return redirect()->route('dashboard')->with('error', 'Event not found.');
+        }
+        $theatreDetails = [
+            'location' => $event->venue ?? 'Main Venue',
+            'theatre_name' => 'Event Ground',
+            'screen_type' => 'Live Event'
+        ];
+        return view('user.event_details', compact('event', 'theatreDetails'));
     }
 
     private function movieQuery(Request $request = null)
@@ -172,7 +215,7 @@ class UserAuthController extends Controller
     public function myBookings()
     {
         $userId = session('user_id');
-        $bookings = Booking::with('movie')
+        $bookings = Booking::with(['movie', 'event'])
                            ->where('user_id', $userId)
                            ->orderBy('booking_date', 'desc')
                            ->get();
@@ -196,25 +239,48 @@ class UserAuthController extends Controller
         }
 
         // Find the movie and free up the seats
-        $movie = Movie::find($booking->movie_id);
-        if ($movie) {
-            $showTime = \Carbon\Carbon::parse($movie->start_time)->timezone('Asia/Kolkata');
-            if (now()->timezone('Asia/Kolkata')->addHours(2)->greaterThanOrEqualTo($showTime)) {
-                return response()->json(['status' => false, 'message' => 'Cancellations are only allowed up to 2 hours before the movie starts.'], 400);
-            }
+        if ($booking->movie_id) {
+            $movie = Movie::find($booking->movie_id);
+            if ($movie) {
+                $showTime = \Carbon\Carbon::parse($movie->start_time)->timezone('Asia/Kolkata');
+                if (now()->timezone('Asia/Kolkata')->addHours(2)->greaterThanOrEqualTo($showTime)) {
+                    return response()->json(['status' => false, 'message' => 'Cancellations are only allowed up to 2 hours before the movie starts.'], 400);
+                }
 
-            $layout = $movie->seating_layout;
-            foreach ($layout['layout'] as &$row) {
-                foreach ($row as &$seat) {
-                    if (in_array($seat['id'], $booking->seats)) {
-                        $seat['status'] = 'available';
-                        unset($seat['booked_at']);
-                        unset($seat['user_id']);
+                $layout = $movie->seating_layout;
+                foreach ($layout['layout'] as &$row) {
+                    foreach ($row as &$seat) {
+                        if (in_array($seat['id'], $booking->seats)) {
+                            $seat['status'] = 'available';
+                            unset($seat['booked_at']);
+                            unset($seat['user_id']);
+                        }
                     }
                 }
+                $movie->seating_layout = $layout;
+                $movie->save();
             }
-            $movie->seating_layout = $layout;
-            $movie->save();
+        } elseif ($booking->event_id) {
+            $event = Event::find($booking->event_id);
+            if ($event) {
+                $showTime = \Carbon\Carbon::parse($event->start_time)->timezone('Asia/Kolkata');
+                if (now()->timezone('Asia/Kolkata')->addHours(2)->greaterThanOrEqualTo($showTime)) {
+                    return response()->json(['status' => false, 'message' => 'Cancellations are only allowed up to 2 hours before the event starts.'], 400);
+                }
+
+                $layout = $event->seating_layout;
+                foreach ($layout['layout'] as &$row) {
+                    foreach ($row as &$seat) {
+                        if (in_array($seat['id'], $booking->seats)) {
+                            $seat['status'] = 'available';
+                            unset($seat['booked_at']);
+                            unset($seat['user_id']);
+                        }
+                    }
+                }
+                $event->seating_layout = $layout;
+                $event->save();
+            }
         }
 
         $booking->delete();
@@ -400,5 +466,164 @@ class UserAuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/login')->with('success', 'You have been logged out.');
+    }
+
+    public function fetchEventSeats($id)
+    {
+        $event = Event::find($id);
+        if (!$event) return response()->json(['status' => false], 404);
+
+        return response()->json([
+            'status' => true,
+            'layout' => $event->seating_layout
+        ]);
+    }
+
+    public function initiateEventPayment(Request $request, $id)
+    {
+        $selectedSeatIds = $request->input('seats', []);
+        
+        if (empty($selectedSeatIds)) {
+            return response()->json(['status' => false, 'message' => 'No seats selected.'], 400);
+        }
+
+        $event = Event::find($id);
+        if (!$event) return response()->json(['status' => false, 'message' => 'Event not found.'], 404);
+        
+        $layout = $event->seating_layout;
+        $totalPrice = 0;
+
+        $prices = [
+            'standard' => (float)$event->price_normal,
+            'premium' => (float)$event->price_premium,
+            'vip' => (float)$event->price_vip
+        ];
+
+        foreach ($layout['layout'] as &$row) {
+            foreach ($row as &$seat) {
+                if (in_array($seat['id'], $selectedSeatIds)) {
+                    if ($seat['status'] !== 'available') {
+                        return response()->json(['status' => false, 'message' => 'Some seats were already booked. Please re-select.'], 400);
+                    }
+                    $totalPrice += $prices[$seat['type']] ?? 0;
+                }
+            }
+        }
+
+        if ($totalPrice <= 0) {
+            return response()->json(['status' => false, 'message' => 'Invalid total price.'], 400);
+        }
+
+        try {
+            $api = new Api(env('RAZORPAY_KEY'), env('RAZORPAY_SECRET'));
+            
+            $orderData = [
+                'receipt'         => 'rcptid_ev_' . time() . '_' . rand(1000, 9999),
+                'amount'          => $totalPrice * 100,
+                'currency'        => 'INR',
+                'payment_capture' => 1
+            ];
+
+            $razorpayOrder = $api->order->create($orderData);
+
+            return response()->json([
+                'status' => true,
+                'order_id' => $razorpayOrder['id'],
+                'amount' => $orderData['amount'],
+                'key' => env('RAZORPAY_KEY')
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Razorpay Error (Event): ' . $e->getMessage());
+            return response()->json(['status' => false, 'message' => 'Failed to initialize payment gateway: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function bookEventTickets(Request $request, $id)
+    {
+        $selectedSeatIds = $request->input('seats', []); 
+        $attendees = $request->input('attendees', []);
+        $razorpayPaymentId = $request->input('razorpay_payment_id');
+        $razorpayOrderId = $request->input('razorpay_order_id');
+        $razorpaySignature = $request->input('razorpay_signature');
+
+        if (!$razorpayPaymentId || !$razorpayOrderId || !$razorpaySignature) {
+            return response()->json(['status' => false, 'message' => 'Payment details missing.'], 400);
+        }
+
+        try {
+            $api = new Api(env('RAZORPAY_KEY'), env('RAZORPAY_SECRET'));
+            $attributes = [
+                'razorpay_order_id' => $razorpayOrderId,
+                'razorpay_payment_id' => $razorpayPaymentId,
+                'razorpay_signature' => $razorpaySignature
+            ];
+            $api->utility->verifyPaymentSignature($attributes);
+        } catch (\Exception $e) {
+            Log::error('Razorpay Signature Verification Failed (Event): ' . $e->getMessage());
+            return response()->json(['status' => false, 'message' => 'Payment verification failed.'], 400);
+        }
+
+        if (empty($selectedSeatIds) || count($selectedSeatIds) !== count($attendees)) {
+            return response()->json(['status' => false, 'message' => 'Invalid seats or attendees data.'], 400);
+        }
+
+        $event = Event::find($id);
+        if (!$event) return response()->json(['status' => false, 'message' => 'Event not found.'], 404);
+        
+        $layout = $event->seating_layout;
+        $alreadyBooked = [];
+        $totalPrice = 0;
+
+        $prices = [
+            'standard' => (float)$event->price_normal,
+            'premium' => (float)$event->price_premium,
+            'vip' => (float)$event->price_vip
+        ];
+
+        foreach ($layout['layout'] as &$row) {
+            foreach ($row as &$seat) {
+                if (in_array($seat['id'], $selectedSeatIds)) {
+                    if ($seat['status'] !== 'available') {
+                        $alreadyBooked[] = $seat['id'];
+                        continue;
+                    }
+                    $seat['status'] = 'booked';
+                    $seat['booked_at'] = now('Asia/Kolkata')->toDateTimeString();
+                    $seat['user_id'] = session('user_id');
+                    $totalPrice += $prices[$seat['type']] ?? 0;
+                }
+            }
+        }
+
+        if (!empty($alreadyBooked)) {
+            return response()->json([
+                'status' => false, 
+                'message' => 'Some seats were already booked: ' . implode(', ', $alreadyBooked)
+            ], 400);
+        }
+
+        $event->seating_layout = $layout;
+        $event->save();
+
+        Booking::create([
+            'user_id' => session('user_id'),
+            'event_id' => $id,
+            'seats' => $selectedSeatIds,
+            'ticket_count' => count($selectedSeatIds),
+            'attendees' => $attendees,
+            'customer_email' => $attendees[0]['email'] ?? '',
+            'customer_phone' => $attendees[0]['phone'] ?? '',
+            'total_price' => $totalPrice,
+            'booking_date' => now('Asia/Kolkata')->toDateTimeString(),
+            'razorpay_payment_id' => $razorpayPaymentId,
+            'razorpay_order_id' => $razorpayOrderId,
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Congratulations! Your event tickets have been booked.',
+            'seats' => $selectedSeatIds,
+            'total_price' => $totalPrice
+        ]);
     }
 }

@@ -51,6 +51,7 @@
                 </div>
                 <div class="flex items-center gap-6">
                     <a href="{{ route('movies') }}" class="text-sm font-medium {{ request()->is('movies') ? 'text-rose-500' : 'text-slate-400 hover:text-white' }} transition-colors">Movies</a>
+                    <a href="{{ route('events') }}" class="text-sm font-medium {{ request()->is('events') ? 'text-rose-500' : 'text-slate-400 hover:text-white' }} transition-colors">Events</a>
                     <a href="{{ route('bookings') }}" class="text-sm font-medium {{ request()->is('bookings') ? 'text-rose-500' : 'text-slate-400 hover:text-white' }} transition-colors">Bookings</a>
                     <div class="h-8 w-px bg-slate-800"></div>
                     <div class="flex items-center gap-3">
