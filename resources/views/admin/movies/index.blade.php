@@ -1,36 +1,10 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-950">
+@extends('admin.layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Movies | Admin</title>
+@section('title', 'All Movies')
+@section('page_title', 'All Movies')
 
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <style>
-        body {
-            font-family: 'Outfit', sans-serif;
-        }
-
-        .glass {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-    </style>
-</head>
-
-<body class="min-h-screen text-slate-200 p-4 md:p-8">
-
+@section('content')
+<div class="p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -128,6 +102,7 @@
             @endforelse
         </div>
     </div>
+</div>
 
     <!-- Movie Details Modal -->
     <div id="movieModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
@@ -143,6 +118,9 @@
         </div>
     </div>
 
+@endsection
+
+@section('scripts')
     <script>
         function showMovieDetails(movie) {
             const modal = document.getElementById('movieModal');
@@ -305,6 +283,4 @@
             });
         }
     </script>
-</body>
-
-</html>
+@endsection

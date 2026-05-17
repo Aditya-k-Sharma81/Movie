@@ -31,6 +31,7 @@
                 $bookingDate = \Carbon\Carbon::parse($booking->booking_date)->timezone('Asia/Kolkata');
                 $showTime = $movie ? \Carbon\Carbon::parse($movie->start_time)->timezone('Asia/Kolkata') : null;
                 $isUpcoming = $showTime && $showTime->isFuture();
+                $canCancel = $showTime && now()->timezone('Asia/Kolkata')->addHours(2)->lessThan($showTime);
             @endphp
 
             <div class="bg-slate-900/40 backdrop-blur-sm border border-slate-800/60 rounded-3xl overflow-hidden hover:border-slate-700 transition-all">
@@ -59,6 +60,13 @@
                                     <span class="px-2.5 py-0.5 text-[9px] font-black uppercase rounded-full tracking-widest {{ $isUpcoming ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-500 border border-slate-700' }}">
                                         {{ $isUpcoming ? 'Upcoming' : 'Completed' }}
                                     </span>
+                                </div>
+
+                                <!-- Theatre & Location -->
+                                <div class="flex items-center gap-1.5 text-xs text-indigo-400 font-bold mb-4">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                                    {{ $theatreDetails['theatre_name'] ?? 'MovieTicket Cinemas' }}
+                                    <span class="text-slate-500 font-medium ml-1">• {{ $theatreDetails['location'] ?? 'City Center' }}</span>
                                 </div>
 
                                 <!-- Show Date & Time -->
@@ -92,12 +100,16 @@
                             <div class="text-right shrink-0">
                                 <p class="text-2xl font-black text-white">₹{{ number_format($booking->total_price) }}</p>
                                 <p class="text-[10px] text-slate-500 uppercase font-bold mt-1">Booked {{ $bookingDate->format('d M, h:i A') }}</p>
-                                @if($isUpcoming)
+                                @if($canCancel)
                                 <button onclick="cancelBooking('{{ $booking->_id }}')"
                                     class="mt-3 px-4 py-2 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white border border-red-600/30 hover:border-red-600 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-1.5 ml-auto">
                                     <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
                                     Cancel Ticket
                                 </button>
+                                @elseif($isUpcoming)
+                                <p class="mt-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest text-right" title="Cancellations are only allowed up to 2 hours before the show.">
+                                    <i data-lucide="clock" class="w-3 h-3 inline-block -mt-0.5 mr-0.5"></i> Cancellation Closed
+                                </p>
                                 @endif
                             </div>
                         </div>

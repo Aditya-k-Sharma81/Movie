@@ -251,6 +251,7 @@
 @endsection
 
 @section('scripts')
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
     const MOVIE_ID = "{{ $movie->id }}";
     let selectedSeats = [];
@@ -448,30 +449,96 @@
         lucide.createIcons();
 
         $.ajax({
-            url: `/movie/${MOVIE_ID}/book`,
+            url: `/movie/${MOVIE_ID}/payment/init`,
             type: 'POST',
             data: {
                 seats: selectedSeats.map(s => s.id),
-                attendees: attendees,
                 _token: $('meta[name="csrf-token"]').attr('content')
             },
-            success: function(response) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Booking Confirmed!',
-                    text: response.message,
-                    background: '#0f172a',
-                    color: '#f8fafc',
-                    confirmButtonColor: '#e11d48'
-                }).then(() => {
-                    window.location.href = "{{ route('bookings') }}";
-                });
+            success: function(initResponse) {
+                if(initResponse.status) {
+                    var options = {
+                        "key": initResponse.key, // Enter the Key ID generated from the Dashboard
+                        "amount": initResponse.amount, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+                        "currency": "INR",
+                        "name": "MovieTicket",
+                        "description": "Movie Ticket Booking",
+                        "order_id": initResponse.order_id, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+                        "handler": function (response){
+                            // Now send the payment details to the server
+                            $.ajax({
+                                url: `/movie/${MOVIE_ID}/book`,
+                                type: 'POST',
+                                data: {
+                                    seats: selectedSeats.map(s => s.id),
+                                    attendees: attendees,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    _token: $('meta[name="csrf-token"]').attr('content')
+                                },
+                                success: function(bookResponse) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Booking Confirmed!',
+                                        text: bookResponse.message,
+                                        background: '#0f172a',
+                                        color: '#f8fafc',
+                                        confirmButtonColor: '#e11d48'
+                                    }).then(() => {
+                                        window.location.href = "{{ route('bookings') }}";
+                                    });
+                                },
+                                error: function(xhr) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Booking Failed',
+                                        text: xhr.responseJSON.message || 'Something went wrong.',
+                                        background: '#0f172a',
+                                        color: '#f8fafc',
+                                        confirmButtonColor: '#e11d48'
+                                    });
+                                    btn.prop('disabled', false).html(originalText);
+                                    lucide.createIcons();
+                                }
+                            });
+                        },
+                        "prefill": {
+                            "name": attendees[0].name,
+                            "email": attendees[0].email,
+                            "contact": attendees[0].phone
+                        },
+                        "theme": {
+                            "color": "#e11d48"
+                        },
+                        "modal": {
+                            "ondismiss": function() {
+                                btn.prop('disabled', false).html(originalText);
+                                lucide.createIcons();
+                            }
+                        }
+                    };
+                    var rzp1 = new Razorpay(options);
+                    rzp1.on('payment.failed', function (response){
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Payment Failed',
+                            text: response.error.description,
+                            background: '#0f172a',
+                            color: '#f8fafc',
+                            confirmButtonColor: '#e11d48'
+                        });
+                        btn.prop('disabled', false).html(originalText);
+                        lucide.createIcons();
+                    });
+                    rzp1.open();
+                }
             },
             error: function(xhr) {
                 Swal.fire({
                     icon: 'error',
-                    title: 'Booking Failed',
-                    text: xhr.responseJSON.message || 'Something went wrong.',
+                    title: 'Payment Initialization Failed',
+                    text: xhr.responseJSON ? xhr.responseJSON.message : 'Something went wrong.',
                     background: '#0f172a',
                     color: '#f8fafc',
                     confirmButtonColor: '#e11d48'

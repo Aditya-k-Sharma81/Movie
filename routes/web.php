@@ -28,6 +28,7 @@ Route::middleware(['user.auth'])->group(function () {
 
     Route::get('/movie/{id}', [UserAuthController::class, 'movieDetails'])->name('movie.details');
     Route::get('/movie/{id}/seats', [UserAuthController::class, 'fetchSeats'])->name('movie.seats');
+    Route::post('/movie/{id}/payment/init', [UserAuthController::class, 'initiatePayment'])->name('movie.payment.init');
     Route::post('/movie/{id}/book', [UserAuthController::class, 'bookTickets'])->name('movie.book');
     Route::delete('/booking/{id}/cancel', [UserAuthController::class, 'cancelBooking'])->name('booking.cancel');
 });

@@ -1,118 +1,94 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-950">
+@extends('admin.layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Movie | Admin</title>
+@section('title', 'Add Movie')
+@section('page_title', 'Add New Movie')
 
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- jQuery & Select2 -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+@section('head_scripts')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@endsection
 
-    <style>
-        body {
-            font-family: 'Outfit', sans-serif;
-        }
+@section('styles')
+    .form-input {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        transition: all 0.3s ease;
+    }
 
-        .glass {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+    .form-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        outline: none;
+    }
 
-        .form-input {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            transition: all 0.3s ease;
-        }
+    /* Seating Builder Styles */
+    .seat { transition: all 0.2s ease; cursor: pointer; }
+    .seat:hover { transform: scale(1.1); }
+    .seat.standard { background-color: #6366f1; }
+    .seat.premium { background-color: #ec4899; }
+    .seat.vip { background-color: #eab308; }
+    .seat.blocked { background-color: #ef4444; opacity: 0.5; }
+    .seat.empty { background-color: transparent; border: 1px dashed rgba(255,255,255,0.2); }
+    .seat-grid { display: grid; gap: 0.5rem; }
+    .screen-curve {
+        background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+        border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+        box-shadow: 0 10px 30px -5px rgba(255, 255, 255, 0.3);
+    }
 
-        .form-input:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-            outline: none;
-        }
+    /* Custom Select2 Dark Theme styling */
+    .select2-container--default .select2-selection--multiple {
+        background-color: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.75rem; /* rounded-xl to match form-input */
+        min-height: 48px;
+        padding: 4px;
+    }
+    .select2-container--default.select2-container--focus .select2-selection--multiple {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background-color: #6366f1;
+        border: none;
+        color: white;
+        border-radius: 0.5rem;
+        padding: 4px 10px;
+        margin-top: 5px;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: rgba(255, 255, 255, 0.8);
+        margin-right: 8px;
+        border-right: none;
+        font-weight: bold;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: white;
+        background: none;
+    }
+    .select2-dropdown {
+        background-color: #1e293b;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+    .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+        background-color: #6366f1;
+        color: white;
+    }
+    .select2-container--default .select2-results__option--selected {
+        background-color: #334155;
+    }
+    .select2-search--inline .select2-search__field {
+        color: white;
+        margin-top: 8px;
+    }
+@endsection
 
-        /* Seating Builder Styles */
-        .seat { transition: all 0.2s ease; cursor: pointer; }
-        .seat:hover { transform: scale(1.1); }
-        .seat.standard { background-color: #6366f1; }
-        .seat.premium { background-color: #ec4899; }
-        .seat.vip { background-color: #eab308; }
-        .seat.blocked { background-color: #ef4444; opacity: 0.5; }
-        .seat.empty { background-color: transparent; border: 1px dashed rgba(255,255,255,0.2); }
-        .seat-grid { display: grid; gap: 0.5rem; }
-        .screen-curve {
-            background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
-            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-            box-shadow: 0 10px 30px -5px rgba(255, 255, 255, 0.3);
-        }
-
-        /* Custom Select2 Dark Theme styling */
-        .select2-container--default .select2-selection--multiple {
-            background-color: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0.75rem; /* rounded-xl to match form-input */
-            min-height: 48px;
-            padding: 4px;
-        }
-        .select2-container--default.select2-container--focus .select2-selection--multiple {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-        }
-        .select2-container--default .select2-selection--multiple .select2-selection__choice {
-            background-color: #6366f1;
-            border: none;
-            color: white;
-            border-radius: 0.5rem;
-            padding: 4px 10px;
-            margin-top: 5px;
-        }
-        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-            color: rgba(255, 255, 255, 0.8);
-            margin-right: 8px;
-            border-right: none;
-            font-weight: bold;
-        }
-        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
-            color: white;
-            background: none;
-        }
-        .select2-dropdown {
-            background-color: #1e293b;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            border-radius: 0.75rem;
-            overflow: hidden;
-        }
-        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
-            background-color: #6366f1;
-            color: white;
-        }
-        .select2-container--default .select2-results__option--selected {
-            background-color: #334155;
-        }
-        .select2-search--inline .select2-search__field {
-            color: white;
-            margin-top: 8px;
-        }
-
-    </style>
-</head>
-
-<body class="min-h-screen text-slate-200 p-4 md:p-8">
-
+@section('content')
+<div class="p-8">
     <div class="max-w-4xl mx-auto">
         <!-- Header -->
         <div class="flex items-center justify-between mb-8">
@@ -279,7 +255,10 @@
             </form>
         </div>
     </div>
+</div>
+@endsection
 
+@section('scripts')
     <script>
         $(document).ready(function() {
             // Setup CSRF Token
@@ -374,6 +353,7 @@
                 
                 let formData = new FormData(this);
                 let $btn = $('#submitBtn');
+                let originalText = $btn.text();
                 
                 $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-2"></i> Adding...');
 
@@ -421,6 +401,4 @@
             });
         });
     </script>
-</body>
-
-</html>
+@endsection

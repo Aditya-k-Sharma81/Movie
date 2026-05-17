@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Razorpay\Api\Api;
 
 class UserAuthController extends Controller
 {
@@ -35,10 +36,17 @@ class UserAuthController extends Controller
     {
         $movies = $this->movieQuery($request);
 
-        // Get unique values for filters
-        $allMovies = Movie::all();
-        $categories = $allMovies->pluck('category')->flatten()->unique()->filter()->values();
-        $genres = $allMovies->pluck('genre')->flatten()->unique()->filter()->values();
+        // Get unique values for filters using DB distinct
+        $categoriesRaw = Movie::raw(function($collection) {
+            return $collection->distinct('category');
+        });
+        
+        $genresRaw = Movie::raw(function($collection) {
+            return $collection->distinct('genre');
+        });
+
+        $categories = collect($categoriesRaw)->filter()->values();
+        $genres = collect($genresRaw)->filter()->values();
 
         return view('user.movies', compact('movies', 'categories', 'genres'));
     }
@@ -81,15 +89,10 @@ class UserAuthController extends Controller
             }
         }
 
-        // 2. Fetch and apply time-based filtering in PHP for reliability
-        return $query->get()->filter(function ($movie) use ($now) {
-            try {
-                $startTime = \Carbon\Carbon::parse($movie->start_time, 'Asia/Kolkata');
-                return $startTime->greaterThanOrEqualTo($now);
-            } catch (\Exception $e) {
-                return false;
-            }
-        })->sortBy('start_time')->values();
+        // 2. Apply time-based filtering directly in the database query
+        $query->where('start_time', '>=', $now->format('Y-m-d\TH:i'));
+
+        return $query->orderBy('start_time', 'asc')->get();
     }
 
     public function register(Request $request)
@@ -169,18 +172,18 @@ class UserAuthController extends Controller
     public function myBookings()
     {
         $userId = session('user_id');
-        $bookings = Booking::where('user_id', $userId)
+        $bookings = Booking::with('movie')
+                           ->where('user_id', $userId)
                            ->orderBy('booking_date', 'desc')
                            ->get();
 
-        // Attach movie details to each booking
-        $bookings = $bookings->map(function ($booking) {
-            $movie = Movie::find($booking->movie_id);
-            $booking->movie = $movie;
-            return $booking;
-        });
+        $admin = \App\Models\AdminSignupModel::first();
+        $theatreDetails = [
+            'location' => $admin->address ?? 'Main Road, City Center',
+            'theatre_name' => $admin->theatre_name ?? 'Grand Cinema'
+        ];
 
-        return view('user.bookings', compact('bookings'));
+        return view('user.bookings', compact('bookings', 'theatreDetails'));
     }
 
     public function cancelBooking($id)
@@ -195,6 +198,11 @@ class UserAuthController extends Controller
         // Find the movie and free up the seats
         $movie = Movie::find($booking->movie_id);
         if ($movie) {
+            $showTime = \Carbon\Carbon::parse($movie->start_time)->timezone('Asia/Kolkata');
+            if (now()->timezone('Asia/Kolkata')->addHours(2)->greaterThanOrEqualTo($showTime)) {
+                return response()->json(['status' => false, 'message' => 'Cancellations are only allowed up to 2 hours before the movie starts.'], 400);
+            }
+
             $layout = $movie->seating_layout;
             foreach ($layout['layout'] as &$row) {
                 foreach ($row as &$seat) {
@@ -225,10 +233,91 @@ class UserAuthController extends Controller
         ]);
     }
 
+    public function initiatePayment(Request $request, $id)
+    {
+        $selectedSeatIds = $request->input('seats', []);
+        
+        if (empty($selectedSeatIds)) {
+            return response()->json(['status' => false, 'message' => 'No seats selected.'], 400);
+        }
+
+        $movie = Movie::find($id);
+        if (!$movie) return response()->json(['status' => false, 'message' => 'Movie not found.'], 404);
+        
+        $layout = $movie->seating_layout;
+        $totalPrice = 0;
+
+        // Pricing map
+        $prices = [
+            'standard' => (float)$movie->price_normal,
+            'premium' => (float)$movie->price_premium,
+            'vip' => (float)$movie->price_vip
+        ];
+
+        // Iterate through the layout and calculate price
+        foreach ($layout['layout'] as &$row) {
+            foreach ($row as &$seat) {
+                if (in_array($seat['id'], $selectedSeatIds)) {
+                    if ($seat['status'] !== 'available') {
+                        return response()->json(['status' => false, 'message' => 'Some seats were already booked. Please re-select.'], 400);
+                    }
+                    $totalPrice += $prices[$seat['type']] ?? 0;
+                }
+            }
+        }
+
+        if ($totalPrice <= 0) {
+            return response()->json(['status' => false, 'message' => 'Invalid total price.'], 400);
+        }
+
+        try {
+            $api = new Api(env('RAZORPAY_KEY'), env('RAZORPAY_SECRET'));
+            
+            $orderData = [
+                'receipt'         => 'rcptid_' . time() . '_' . rand(1000, 9999),
+                'amount'          => $totalPrice * 100, // Amount in paise
+                'currency'        => 'INR',
+                'payment_capture' => 1 // auto capture
+            ];
+
+            $razorpayOrder = $api->order->create($orderData);
+
+            return response()->json([
+                'status' => true,
+                'order_id' => $razorpayOrder['id'],
+                'amount' => $orderData['amount'],
+                'key' => env('RAZORPAY_KEY')
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Razorpay Error: ' . $e->getMessage());
+            return response()->json(['status' => false, 'message' => 'Failed to initialize payment gateway: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function bookTickets(Request $request, $id)
     {
         $selectedSeatIds = $request->input('seats', []); 
         $attendees = $request->input('attendees', []); // Array of objects {name, email, phone}
+        $razorpayPaymentId = $request->input('razorpay_payment_id');
+        $razorpayOrderId = $request->input('razorpay_order_id');
+        $razorpaySignature = $request->input('razorpay_signature');
+
+        if (!$razorpayPaymentId || !$razorpayOrderId || !$razorpaySignature) {
+            return response()->json(['status' => false, 'message' => 'Payment details missing.'], 400);
+        }
+
+        try {
+            $api = new Api(env('RAZORPAY_KEY'), env('RAZORPAY_SECRET'));
+            $attributes = [
+                'razorpay_order_id' => $razorpayOrderId,
+                'razorpay_payment_id' => $razorpayPaymentId,
+                'razorpay_signature' => $razorpaySignature
+            ];
+            $api->utility->verifyPaymentSignature($attributes);
+        } catch (\Exception $e) {
+            Log::error('Razorpay Signature Verification Failed: ' . $e->getMessage());
+            return response()->json(['status' => false, 'message' => 'Payment verification failed.'], 400);
+        }
 
         if (empty($selectedSeatIds)) {
             return response()->json(['status' => false, 'message' => 'No seats selected.'], 400);
@@ -286,11 +375,14 @@ class UserAuthController extends Controller
             'user_id' => session('user_id'),
             'movie_id' => $id,
             'seats' => $selectedSeatIds,
+            'ticket_count' => count($selectedSeatIds),
             'attendees' => $attendees,
             'customer_email' => $attendees[0]['email'] ?? '',
             'customer_phone' => $attendees[0]['phone'] ?? '',
             'total_price' => $totalPrice,
             'booking_date' => now('Asia/Kolkata')->toDateTimeString(),
+            'razorpay_payment_id' => $razorpayPaymentId,
+            'razorpay_order_id' => $razorpayOrderId,
         ]);
 
         return response()->json([

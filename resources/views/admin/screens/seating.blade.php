@@ -1,94 +1,35 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-950">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seating Arrangement Builder | Admin</title>
+@extends('admin.layouts.app')
+
+@section('title', 'Seating Arrangement Builder')
+@section('page_title', 'Seating Arrangement Builder')
+
+@section('styles')
+    /* Seat Types */
+    .seat { transition: all 0.2s ease; }
+    .seat:hover { transform: scale(1.1); }
+    .seat.standard { background-color: #6366f1; /* Indigo */ }
+    .seat.premium { background-color: #ec4899; /* Pink */ }
+    .seat.vip { background-color: #eab308; /* Yellow/Gold */ }
+    .seat.blocked { background-color: #ef4444; /* Red */ opacity: 0.5; }
+    .seat.empty { background-color: transparent; border: 1px dashed rgba(255,255,255,0.2); }
     
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    /* Seat Grid */
+    .seat-grid {
+        display: grid;
+        gap: 0.5rem;
+    }
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    /* Screen glow */
+    .screen-curve {
+        background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+        border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+        box-shadow: 0 10px 30px -5px rgba(255, 255, 255, 0.3);
+    }
+@endsection
 
-    <style>
-        body { font-family: 'Outfit', sans-serif; }
-        .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        /* Seat Types */
-        .seat { transition: all 0.2s ease; }
-        .seat:hover { transform: scale(1.1); }
-        .seat.standard { background-color: #6366f1; /* Indigo */ }
-        .seat.premium { background-color: #ec4899; /* Pink */ }
-        .seat.vip { background-color: #eab308; /* Yellow/Gold */ }
-        .seat.blocked { background-color: #ef4444; /* Red */ opacity: 0.5; }
-        .seat.empty { background-color: transparent; border: 1px dashed rgba(255,255,255,0.2); }
-        
-        /* Seat Grid */
-        .seat-grid {
-            display: grid;
-            gap: 0.5rem;
-        }
-
-        /* Screen glow */
-        .screen-curve {
-            background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
-            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-            box-shadow: 0 10px 30px -5px rgba(255, 255, 255, 0.3);
-        }
-    </style>
-</head>
-<body class="h-full text-slate-200">
-    <div class="flex h-full">
-        <!-- Sidebar -->
-        <aside class="w-64 glass border-r border-slate-800 flex flex-col hidden md:flex">
-            <div class="p-6">
-                <h1 class="text-2xl font-extrabold tracking-tight text-white">
-                    Movie<span class="text-indigo-500">Ticket</span>
-                </h1>
-            </div>
-            
-            <nav class="flex-1 mt-4 px-4 space-y-2">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
-                    <i class="fa-solid fa-chart-pie w-5 h-5 mr-3"></i> Dashboard
-                </a>
-                <a href="{{ route('admin.movies.index') }}" class="flex items-center px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
-                    <i class="fa-solid fa-film w-5 h-5 mr-3"></i> All Movies
-                </a>
-                <a href="{{ route('admin.movies.add') }}" class="flex items-center px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
-                    <i class="fa-solid fa-plus w-5 h-5 mr-3"></i> Add Movie
-                </a>
-                <a href="/admin/screens/seating" class="flex items-center px-4 py-3 text-white bg-indigo-500/10 border border-indigo-500/20 rounded-lg transition-all">
-                    <i class="fa-solid fa-chair w-5 h-5 mr-3 text-indigo-400"></i> Seating Map
-                </a>
-                <a href="{{ route('admin.profile') }}" class="flex items-center px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
-                    <i class="fa-solid fa-user w-5 h-5 mr-3"></i> My Profile
-                </a>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="flex-1 flex flex-col overflow-hidden bg-slate-950">
-            <!-- Header -->
-            <header class="h-16 glass border-b border-slate-800 flex items-center justify-between px-8 z-10">
-                <h2 class="text-xl font-semibold text-white">Seating Arrangement Builder</h2>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ route('admin.dashboard') }}" class="text-sm font-medium text-slate-300 hover:text-white transition-colors">
-                        <i class="fa-solid fa-arrow-left mr-1"></i> Back to Dashboard
-                    </a>
-                </div>
-            </header>
-
-            <!-- Builder Area -->
-            <div class="flex-1 overflow-y-auto p-8 flex flex-col xl:flex-row gap-8">
+@section('content')
+<!-- Builder Area -->
+<div class="flex-1 p-4 md:p-8 flex flex-col xl:flex-row gap-8">
                 
                 <!-- Tools Panel -->
                 <div class="w-full xl:w-80 flex-shrink-0 space-y-6">
@@ -171,11 +112,10 @@
 
                 </div>
 
-            </div>
-        </main>
-    </div>
+</div>
+@endsection
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+@section('scripts')
     <script>
         // CSRF Setup for AJAX
         $.ajaxSetup({
@@ -350,5 +290,4 @@
 
         initLayout();
     </script>
-</body>
-</html>
+@endsection

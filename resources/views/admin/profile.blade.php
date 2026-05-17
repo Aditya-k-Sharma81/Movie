@@ -1,35 +1,20 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-950">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Profile | MovieTicket</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        body { font-family: 'Outfit', sans-serif; }
-        .glass { background: rgba(15,23,42,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.07); }
-        .field {
-            background: rgba(15,23,42,0.9);
-            border: 1px solid #1e293b;
-            color: #f1f5f9;
-            transition: border-color .2s, box-shadow .2s;
-        }
-        .field:focus { border-color: #e11d48; box-shadow: 0 0 0 3px rgba(225,29,72,.1); outline: none; }
-        .field::placeholder { color: #475569; }
-        select.field option { background: #0f172a; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-    </style>
-</head>
-<body class="min-h-screen bg-slate-950 text-slate-200">
+@extends('admin.layouts.app')
 
-<!-- Navbar -->
+@section('title', 'My Profile')
+
+@section('styles')
+    .field {
+        background: rgba(15,23,42,0.9);
+        border: 1px solid #1e293b;
+        color: #f1f5f9;
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .field:focus { border-color: #e11d48; box-shadow: 0 0 0 3px rgba(225,29,72,.1); outline: none; }
+    .field::placeholder { color: #475569; }
+    select.field option { background: #0f172a; }
+@endsection
+
+@section('header')
 <header class="glass border-b border-slate-800 sticky top-0 z-50 px-8 h-14 flex items-center justify-between">
     <div class="flex items-center gap-4">
         <a href="{{ route('admin.dashboard') }}" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-400 hover:text-white transition-all">
@@ -41,8 +26,9 @@
         <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Logout
     </a>
 </header>
+@endsection
 
-<!-- Page -->
+@section('content')
 <div class="max-w-5xl mx-auto px-6 py-10 space-y-6">
 
     <!-- Profile Header Card -->
@@ -237,9 +223,10 @@
         </div>
     </div>
 </div>
+@endsection
 
+@section('scripts')
 <script>
-    lucide.createIcons();
     $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
 
     // File pick → preview + label
@@ -294,5 +281,4 @@
         });
     });
 </script>
-</body>
-</html>
+@endsection

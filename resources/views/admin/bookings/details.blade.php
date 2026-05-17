@@ -1,51 +1,39 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-950">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $movie->title }} — Bookings | Admin</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <style>
-        body { font-family: 'Outfit', sans-serif; }
-        .glass { background: rgba(15,23,42,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.07); }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-    </style>
-</head>
-<body class="min-h-screen text-slate-200 bg-slate-950">
+@extends('admin.layouts.app')
 
-    <!-- Sticky Top Nav -->
-    <header class="glass border-b border-slate-800/60 sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <a href="{{ route('admin.bookings') }}?date={{ $date }}"
-               class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-400 hover:text-white transition-all">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            </a>
-            @if($movie->poster)
-                <img src="{{ $movie->poster }}" class="w-8 h-10 object-cover rounded-lg shrink-0">
-            @endif
-            <div>
-                <h1 class="text-base font-black text-white leading-none">{{ $movie->title }}</h1>
-                <p class="text-[10px] text-slate-500 mt-0.5">
-                    {{ \Carbon\Carbon::parse($movie->start_time)->format('d M Y · h:i A') }} ·
-                    Bookings for {{ \Carbon\Carbon::parse($date)->format('d M Y') }}
-                </p>
-            </div>
+@section('title', $movie->title . ' — Bookings')
+
+@section('styles')
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+@endsection
+
+@section('header')
+<header class="glass border-b border-slate-800/60 sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+        <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('admin.dashboard') }}"
+           class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-400 hover:text-white transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        </a>
+        @if($movie->poster)
+            <img src="{{ $movie->poster }}" class="w-8 h-10 object-cover rounded-lg shrink-0">
+        @endif
+        <div>
+            <h1 class="text-base font-black text-white leading-none">{{ $movie->title }}</h1>
+            <p class="text-[10px] text-slate-500 mt-0.5">
+                {{ \Carbon\Carbon::parse($movie->start_time)->format('d M Y · h:i A') }} ·
+                Total Bookings
+            </p>
         </div>
-        <div class="flex items-center gap-4">
-            <!-- Inline Date Filter -->
-            <form method="GET" action="{{ route('admin.bookings.movie', $movie->id) }}" class="flex items-center gap-2">
-                <input type="date" name="date" value="{{ $date }}"
-                    class="bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-1.5 focus:border-rose-500 outline-none transition-all">
-                <button type="submit" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-lg transition-all">Apply</button>
-            </form>
-            <a href="{{ route('admin.logout') }}" class="text-slate-500 hover:text-rose-400 text-xs transition-colors">Logout</a>
-        </div>
-    </header>
+    </div>
+    <div class="flex items-center gap-4">
+
+        <a href="{{ route('admin.logout') }}" class="text-slate-500 hover:text-rose-400 text-xs transition-colors">Logout</a>
+    </div>
+</header>
+@endsection
+
+@section('content')
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -84,7 +72,7 @@
             <div class="glass border border-dashed border-slate-800 rounded-3xl p-20 text-center">
                 <i data-lucide="inbox" class="w-14 h-14 text-slate-700 mx-auto mb-4"></i>
                 <h3 class="text-white font-black text-xl mb-2">No Bookings</h3>
-                <p class="text-slate-500 text-sm">Nobody booked this movie on {{ \Carbon\Carbon::parse($date)->format('d M Y') }}.</p>
+                <p class="text-slate-500 text-sm">Nobody has booked this movie yet.</p>
             </div>
         @else
             <!-- Master Table -->
@@ -95,9 +83,7 @@
                         <h2 class="text-white font-black text-sm">All Attendees</h2>
                         <p class="text-[10px] text-slate-500 mt-0.5">{{ $totalSeats }} attendee(s) across {{ $bookings->count() }} booking(s)</p>
                     </div>
-                    <span class="text-[9px] font-black text-emerald-400 uppercase bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-                        {{ \Carbon\Carbon::parse($date)->format('d M Y') }}
-                    </span>
+
                 </div>
 
                 <!-- Scrollable Table -->
@@ -199,7 +185,7 @@
                         <tfoot>
                             <tr class="border-t border-slate-700 bg-slate-900/60">
                                 <td colspan="6" class="px-5 py-4">
-                                    <span class="text-[10px] text-slate-500 uppercase font-black tracking-widest">Total for {{ \Carbon\Carbon::parse($date)->format('d M Y') }}</span>
+                                    <span class="text-[10px] text-slate-500 uppercase font-black tracking-widest">Total</span>
                                 </td>
                                 <td class="px-5 py-4 text-xs text-slate-400 font-bold">{{ $totalSeats }} seats</td>
                                 <td class="px-5 py-4 text-right">
@@ -211,8 +197,4 @@
                 </div>
             </div>
         @endif
-    </div>
-
-    <script>lucide.createIcons();</script>
-</body>
-</html>
+    </div>@endsection
