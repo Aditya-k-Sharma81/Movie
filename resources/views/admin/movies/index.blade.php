@@ -7,21 +7,21 @@
 <div class="p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-6 md:mb-8 gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-white">All Movies</h1>
-                <p class="text-slate-400">Manage all movies listed in your theatre</p>
+                <h1 class="text-2xl md:text-3xl font-bold text-white">All Movies</h1>
+                <p class="text-sm text-slate-400">Manage all movies listed in your theatre</p>
             </div>
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
                 <!-- Filter Form -->
-                <form method="GET" action="{{ route('admin.movies.index') }}" class="flex items-center gap-3 glass px-3 py-1.5 rounded-xl">
-                    <div class="flex items-center gap-2">
+                <form method="GET" action="{{ route('admin.movies.index') }}" class="flex flex-wrap items-center justify-between sm:justify-start gap-3 glass px-3 py-2 sm:py-1.5 rounded-xl w-full sm:w-auto">
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
                         <label for="date" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date</label>
                         <input type="date" name="date" id="date" value="{{ request('date') }}" onchange="this.form.submit()" 
                             class="bg-slate-900/80 border border-slate-700/50 text-white text-xs rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block px-2 py-1.5 cursor-pointer">
                     </div>
-                    <div class="w-px h-5 bg-slate-700/50"></div>
-                    <div class="flex items-center gap-2">
+                    <div class="hidden sm:block w-px h-5 bg-slate-700/50"></div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
                         <label for="sort" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sort</label>
                         <select name="sort" id="sort" onchange="this.form.submit()" 
                             class="bg-slate-900/80 border border-slate-700/50 text-white text-xs rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block px-2 py-1.5 cursor-pointer">
@@ -35,13 +35,13 @@
                     @endif
                 </form>
 
-                <div class="flex gap-3">
+                <div class="flex gap-2 sm:gap-3 w-full sm:w-auto">
                     <a href="{{ route('admin.dashboard') }}"
-                        class="glass px-4 py-2 rounded-xl text-sm hover:bg-slate-800 transition-all flex items-center justify-center">
+                        class="glass px-4 py-2 rounded-xl text-sm hover:bg-slate-800 transition-all flex items-center justify-center flex-1 sm:flex-none">
                         <i class="fa-solid fa-arrow-left"></i>
                     </a>
                     <a href="{{ route('admin.movies.add') }}"
-                        class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center whitespace-nowrap">
+                        class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center flex-1 sm:flex-none whitespace-nowrap text-sm sm:text-base">
                         <i class="fa-solid fa-plus mr-2"></i> Add Movie
                     </a>
                 </div>
@@ -49,7 +49,7 @@
         </div>
 
         <!-- Movies Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
 
             @forelse($movies as $movie)
             @php
@@ -107,8 +107,8 @@
     <!-- Movie Details Modal -->
     <div id="movieModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
-        <div class="glass relative w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl transform transition-all scale-95 opacity-0 duration-300" id="modalPanel">
-            <button onclick="closeModal()" class="absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-slate-900/50 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all">
+        <div class="glass relative w-full max-w-2xl rounded-[2.5rem] shadow-2xl transform transition-all scale-95 opacity-0 duration-300 max-h-[90vh] overflow-y-auto" id="modalPanel">
+            <button onclick="closeModal()" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-slate-900/80 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             
@@ -131,17 +131,17 @@
                 <div class="flex flex-col md:flex-row gap-8 p-6 md:p-8">
                     <!-- Poster & Meta -->
                     <div class="w-full md:w-1/3 flex flex-col gap-4">
-                        <div class="aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-white/10 group-hover:scale-[1.02] transition-transform duration-500">
+                        <div class="aspect-[2/3] w-2/3 mx-auto md:w-full rounded-2xl overflow-hidden shadow-2xl border border-white/10 group-hover:scale-[1.02] transition-transform duration-500">
                             <img src="${movie.poster || 'https://via.placeholder.com/400x600?text=No+Poster'}" class="w-full h-full object-cover">
                         </div>
-                        <div class="flex flex-wrap gap-2">
+                        <div class="flex flex-wrap justify-center md:justify-start gap-2">
                             ${movie.genre.map(g => `<span class="px-2 py-0.5 bg-slate-800 text-slate-400 text-[9px] font-bold rounded uppercase border border-slate-700 tracking-tighter">${g}</span>`).join('')}
                         </div>
                     </div>
 
                     <!-- Details -->
-                    <div class="flex-1 flex flex-col">
-                        <div class="flex flex-wrap gap-2 mb-3">
+                    <div class="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
+                        <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-3">
                             ${movie.category.map(cat => `<span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold rounded border border-indigo-500/20 uppercase tracking-wider">${cat}</span>`).join('')}
                         </div>
                         <h2 class="text-3xl font-black text-white mb-4 leading-tight">${movie.title}</h2>

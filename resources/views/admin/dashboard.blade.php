@@ -4,12 +4,12 @@
 @section('page_title', 'Overview')
 
 @section('content')
-<div class="p-6 space-y-6">
+<div class="p-4 sm:p-6 space-y-6">
     <!-- All-Time Stats -->
     <div>
         <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-3">All-Time Statistics
         </p>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="stat-card border border-slate-800 rounded-2xl p-5">
                 <div class="flex items-center justify-between mb-3">
                     <div
@@ -65,7 +65,7 @@
     <div>
         <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-3">Today —
             {{ now('Asia/Kolkata')->format('d M Y') }}</p>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="glass border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
                 <div
                     class="w-12 h-12 bg-rose-600/20 rounded-2xl flex items-center justify-center border border-rose-500/30">

@@ -28,11 +28,19 @@
 
 <body class="h-full text-slate-200">
     <div class="flex h-full">
+        <!-- Mobile Sidebar Backdrop -->
+        <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 hidden md:hidden transition-opacity opacity-0"></div>
+
         <!-- Sidebar -->
-        <aside class="w-64 glass border-r border-slate-800 flex flex-col hidden md:flex shrink-0">
-            <div class="p-6 border-b border-slate-800">
-                <h1 class="text-xl font-black tracking-tight text-white">Movie<span class="text-rose-500">Ticket</span></h1>
-                <p class="text-[10px] text-slate-500 mt-0.5 uppercase tracking-widest font-bold">Admin Panel</p>
+        <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 glass border-r border-slate-800 flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out shrink-0 h-full">
+            <div class="p-6 border-b border-slate-800 flex justify-between items-center">
+                <div>
+                    <h1 class="text-xl font-black tracking-tight text-white">Movie<span class="text-rose-500">Ticket</span></h1>
+                    <p class="text-[10px] text-slate-500 mt-0.5 uppercase tracking-widest font-bold">Admin Panel</p>
+                </div>
+                <button id="close-sidebar" class="md:hidden text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
             <nav class="flex-1 mt-4 px-3 space-y-1">
                 @php $currentRoute = request()->route()->getName() ?? ''; @endphp
@@ -88,14 +96,19 @@
                 @yield('header')
             @else
                 <!-- Default Top Bar -->
-                <header class="h-14 glass border-b border-slate-800 flex items-center justify-between px-6 z-10 shrink-0">
-                    <div>
-                        <h2 class="text-white font-black text-base">@yield('page_title', 'Overview')</h2>
-                        <p class="text-[10px] text-slate-500">{{ now('Asia/Kolkata')->format('l, d M Y') }}</p>
+                <header class="h-14 glass border-b border-slate-800 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <button id="mobile-menu-btn" class="md:hidden text-slate-400 hover:text-white shrink-0 p-1">
+                            <i data-lucide="menu" class="w-5 h-5"></i>
+                        </button>
+                        <div class="min-w-0 truncate">
+                            <h2 class="text-white font-black text-base truncate">@yield('page_title', 'Overview')</h2>
+                            <p class="text-[10px] text-slate-500 hidden sm:block">{{ now('Asia/Kolkata')->format('l, d M Y') }}</p>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <a href="{{ route('admin.bookings') }}" class="flex items-center gap-2 px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl transition-all">
-                            <i data-lucide="ticket" class="w-3.5 h-3.5"></i> View Bookings
+                    <div class="flex items-center gap-3 shrink-0 ml-2">
+                        <a href="{{ route('admin.bookings') }}" class="flex items-center gap-2 px-3 sm:px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[10px] sm:text-xs font-black rounded-xl transition-all">
+                            <i data-lucide="ticket" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">View Bookings</span>
                         </a>
                         <a href="{{ route('admin.logout') }}" class="text-slate-500 hover:text-rose-400 text-xs transition-colors">
                             <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -112,6 +125,24 @@
     </div>
 
     @yield('scripts')
-    <script>lucide.createIcons();</script>
+    <script>
+        $(document).ready(function() {
+            const sidebar = $('#sidebar');
+            const backdrop = $('#sidebar-backdrop');
+            
+            $('#mobile-menu-btn').click(function() {
+                sidebar.removeClass('-translate-x-full');
+                backdrop.removeClass('hidden');
+                setTimeout(() => backdrop.removeClass('opacity-0'), 10);
+            });
+
+            $('#close-sidebar, #sidebar-backdrop').click(function() {
+                sidebar.addClass('-translate-x-full');
+                backdrop.addClass('opacity-0');
+                setTimeout(() => backdrop.addClass('hidden'), 300);
+            });
+        });
+        lucide.createIcons();
+    </script>
 </body>
 </html>

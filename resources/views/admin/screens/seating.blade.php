@@ -17,6 +17,7 @@
     .seat-grid {
         display: grid;
         gap: 0.5rem;
+        width: max-content;
     }
 
     /* Screen glow */
@@ -93,7 +94,7 @@
                     </div>
 
                     <!-- Seats Container -->
-                    <div class="flex">
+                    <div class="flex w-max mx-auto pb-4">
                         <!-- Row Labels (Left) -->
                         <div class="flex flex-col justify-between mr-4 py-1" id="row-labels">
                             <!-- Injected by JS -->
@@ -224,14 +225,14 @@
                 for(let c = 0; c < COLS; c++) {
                     const seatData = layout[r][c];
                     const seat = document.createElement('div');
-                    seat.className = `seat ${seatData.type} w-6 h-6 sm:w-8 sm:h-8 rounded cursor-pointer flex items-center justify-center text-[8px] font-bold text-white/50`;
+                    seat.className = `seat ${seatData.type} w-6 h-6 sm:w-8 sm:h-8 shrink-0 rounded cursor-pointer flex items-center justify-center text-[8px] font-bold text-white/50`;
                     
                     if(seatData.type !== 'empty') {
                         seat.innerText = seatData.id; // Showing A1, A2, etc.
                     }
 
                     const updateSeatVisual = () => {
-                        seat.className = `seat ${seatData.type} w-6 h-6 sm:w-8 sm:h-8 rounded cursor-pointer flex items-center justify-center text-[8px] font-bold text-white/50`;
+                        seat.className = `seat ${seatData.type} w-6 h-6 sm:w-8 sm:h-8 shrink-0 rounded cursor-pointer flex items-center justify-center text-[8px] font-bold text-white/50`;
                         seat.innerText = seatData.type !== 'empty' ? seatData.id : '';
                     };
 

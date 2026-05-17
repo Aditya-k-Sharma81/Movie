@@ -30,7 +30,7 @@
     .seat.vip { background-color: #eab308; }
     .seat.blocked { background-color: #ef4444; opacity: 0.5; }
     .seat.empty { background-color: transparent; border: 1px dashed rgba(255,255,255,0.2); }
-    .seat-grid { display: grid; gap: 0.5rem; }
+    .seat-grid { display: grid; gap: 0.5rem; width: max-content; }
     .screen-curve {
         background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
         border-radius: 50% 50% 0 0 / 100% 100% 0 0;
@@ -88,21 +88,21 @@
 @endsection
 
 @section('content')
-<div class="p-8">
+<div class="p-4 md:p-8">
     <div class="max-w-4xl mx-auto">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-white">Edit Movie</h1>
-                <p class="text-slate-400">Update movie details for {{ $movie->title }}</p>
+                <h1 class="text-2xl md:text-3xl font-bold text-white">Edit Movie</h1>
+                <p class="text-sm text-slate-400">Update movie details for {{ $movie->title }}</p>
             </div>
-            <a href="{{ route('admin.movies.index') }}" class="glass px-4 py-2 rounded-xl text-sm hover:bg-slate-800 transition-all">
+            <a href="{{ route('admin.movies.index') }}" class="glass px-4 py-2 rounded-xl text-xs sm:text-sm hover:bg-slate-800 transition-all text-center">
                 <i class="fa-solid fa-arrow-left mr-2"></i> Back to Movies
             </a>
         </div>
 
         <!-- Form Section -->
-        <div class="glass rounded-3xl p-8">
+        <div class="glass rounded-3xl p-5 sm:p-8">
             <form id="editMovieForm" enctype="multipart/form-data" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <!-- Movie Title -->
                 <div class="sm:col-span-2">
@@ -137,7 +137,7 @@
                 </div>
 
                 <!-- Show Timings Section -->
-                <div class="sm:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border border-slate-800 bg-slate-900/30">
+                <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-4 rounded-xl border border-slate-800 bg-slate-900/30">
                     <!-- Start Date & Time -->
                     <div>
                         <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Start Date & Time</label>
@@ -158,7 +158,7 @@
                 </div>
 
                 <!-- Pricing Section -->
-                <div class="sm:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 p-4 rounded-xl border border-slate-800 bg-slate-900/30">
+                <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 p-4 rounded-xl border border-slate-800 bg-slate-900/30">
                     <div>
                         <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Normal Ticket Price (₹)</label>
                         <input type="number" name="price_normal" value="{{ $movie->price_normal }}" class="form-input w-full px-4 py-3 rounded-xl" placeholder="e.g. 150">
@@ -203,7 +203,7 @@
                         <div class="xl:col-span-1 space-y-4">
                             <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/50">
                                 <label class="block text-xs font-medium text-slate-500 uppercase mb-3">Brush Tool</label>
-                                <div class="grid grid-cols-1 gap-2">
+                                <div class="flex flex-wrap xl:flex-col gap-2">
                                     <button type="button" onclick="setBrush('standard')" id="btn-standard" class="flex items-center p-2 rounded-lg border border-indigo-500 bg-indigo-500/20 text-white text-xs">
                                         <div class="w-4 h-4 rounded bg-indigo-500 mr-2"></div> Standard
                                     </button>
@@ -224,13 +224,13 @@
                         </div>
 
                         <!-- Grid -->
-                        <div class="xl:col-span-3 p-6 rounded-xl border border-slate-800 bg-slate-900/50 flex flex-col items-center overflow-x-auto">
+                        <div class="xl:col-span-3 p-4 sm:p-6 rounded-xl border border-slate-800 bg-slate-900/50 flex flex-col items-center overflow-x-auto">
                             <div class="w-48 h-4 mb-8 relative flex items-center justify-center">
                                 <div class="absolute inset-0 screen-curve"></div>
                                 <span class="relative text-[10px] text-white/50 font-bold tracking-widest uppercase">Screen</span>
                             </div>
                             
-                            <div class="flex">
+                            <div class="flex w-max mx-auto pb-4">
                                 <div class="flex flex-col justify-between mr-2 py-1" id="row-labels"></div>
                                 <div class="seat-grid" id="theatre-grid"></div>
                                 <div class="flex flex-col justify-between ml-2 py-1" id="row-labels-right"></div>
@@ -243,11 +243,13 @@
                 <!-- Movie Poster -->
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-medium text-slate-500 uppercase mb-2">Movie Poster (Leave blank to keep current)</label>
-                    <div class="flex items-center gap-4 mb-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-2">
                         @if($movie->poster)
-                            <img src="{{ $movie->poster }}" alt="Current Poster" class="h-16 w-16 object-cover rounded-lg border border-slate-700">
+                            <div class="shrink-0">
+                                <img src="{{ $movie->poster }}" alt="Current Poster" class="h-16 w-16 object-cover rounded-lg border border-slate-700 shadow-lg">
+                            </div>
                         @endif
-                        <input type="file" name="poster" class="form-input flex-1 px-4 py-3 rounded-xl file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
+                        <input type="file" name="poster" class="form-input w-full flex-1 px-4 py-3 rounded-xl file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 text-sm">
                     </div>
                 </div>
 
@@ -329,11 +331,11 @@
                     for(let c = 0; c < COLS; c++) {
                         const seatData = layout[r][c];
                         const seat = document.createElement('div');
-                        seat.className = `seat ${seatData.type} w-4 h-4 rounded-sm flex items-center justify-center text-[6px] font-bold text-white/50`;
+                        seat.className = `seat ${seatData.type} w-4 h-4 shrink-0 rounded-sm flex items-center justify-center text-[6px] font-bold text-white/50`;
                         seat.innerText = seatData.type !== 'empty' ? seatData.id : '';
 
                         const updateSeatVisual = () => {
-                            seat.className = `seat ${seatData.type} w-4 h-4 rounded-sm flex items-center justify-center text-[6px] font-bold text-white/50`;
+                            seat.className = `seat ${seatData.type} w-4 h-4 shrink-0 rounded-sm flex items-center justify-center text-[6px] font-bold text-white/50`;
                             seat.innerText = seatData.type !== 'empty' ? seatData.id : '';
                             // Sync with hidden input
                             document.getElementById('seating_layout_input').value = JSON.stringify({
